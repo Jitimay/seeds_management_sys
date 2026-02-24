@@ -1,0 +1,48 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<form method="post">
+{% csrf_token %}
+{% for obj in objects %}
+    <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}" />
+{% endfor %}
+<input type="hidden" name="action" value="{{ action_name }}" />
+
+<fieldset class="module aligned">
+    <div class="form-row">
+        <div>
+            <label for="motif_refus" class="required">Motif du refus :</label>
+            <textarea name="motif_refus" id="motif_refus" rows="4" cols="80" required></textarea>
+            <p class="help">Veuillez préciser la raison du refus. Ce message sera envoyé par email.</p>
+        </div>
+    </div>
+</fieldset>
+
+<div class="submit-row">
+    <input type="submit" value="Confirmer le refus" class="default" />
+    <a href="../" class="button cancel-link">Annuler</a>
+</div>
+
+<h3>Objets sélectionnés :</h3>
+<ul>
+{% for obj in objects %}
+    <li>{{ obj }}</li>
+{% endfor %}
+</ul>
+
+</form>
+{% endblock %}
