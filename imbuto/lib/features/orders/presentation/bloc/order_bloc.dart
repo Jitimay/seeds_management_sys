@@ -81,12 +81,15 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   }
 
   Future<void> _onLoadOrders(LoadOrders event, Emitter<OrderState> emit) async {
+    print('=== LOADING ORDERS ===');
     emit(OrderLoading());
     try {
       final orders = await getOrdersUseCase();
+      print('Orders loaded successfully: ${orders.length} items');
       emit(OrderLoaded(orders));
     } catch (e) {
-      emit(OrderError(e.toString()));
+      print('Error loading orders: $e');
+      emit(OrderError('Erreur de chargement: ${e.toString()}'));
     }
   }
 

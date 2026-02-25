@@ -3,12 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../bloc/stock_bloc.dart';
 import '../../domain/entities/stock.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class StocksListPage extends StatelessWidget {
   const StocksListPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    print('=== STOCKS PAGE OPENED ===');
     return BlocProvider(
       create: (context) => ServiceLocator.get<StockBloc>()..add(LoadStocks()),
       child: Scaffold(
@@ -266,6 +268,8 @@ class _StockFormDialogState extends State<StockFormDialog> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      Fluttertoast.showToast(msg: "Création du stock en cours...", backgroundColor: Colors.blue);
+      print('Submitting stock form...');
       final stockData = {
         'category': _selectedCategory,
         'variety_name': _varietyController.text,
@@ -273,6 +277,8 @@ class _StockFormDialogState extends State<StockFormDialog> {
         'prix_vente_unitaire': int.parse(_priceController.text),
       };
 
+      print('Stock data: $stockData');
+      
       if (widget.stock == null) {
         context.read<StockBloc>().add(CreateStock(stockData));
       } else {

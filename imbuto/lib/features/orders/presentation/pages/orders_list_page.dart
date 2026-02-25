@@ -3,12 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../bloc/order_bloc.dart';
 import '../../domain/entities/order.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class OrdersListPage extends StatelessWidget {
   const OrdersListPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    print('=== ORDERS PAGE OPENED ===');
     return BlocProvider(
       create: (context) => ServiceLocator.get<OrderBloc>()..add(LoadOrders()),
       child: Scaffold(
@@ -298,6 +300,8 @@ class _OrderFormDialogState extends State<OrderFormDialog> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      Fluttertoast.showToast(msg: "Création de la commande en cours...", backgroundColor: Colors.blue);
+      print('Submitting order form...');
       final orderData = {
         'buyer_name': _buyerController.text,
         'variety': _varietyController.text,
@@ -305,6 +309,8 @@ class _OrderFormDialogState extends State<OrderFormDialog> {
         'price': int.parse(_priceController.text),
       };
 
+      print('Order data: $orderData');
+      
       context.read<OrderBloc>().add(CreateOrder(orderData));
       Navigator.pop(context);
     }

@@ -54,12 +54,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final result = await loginUseCase(event.username, event.password);
       final token = result['access'] ?? '';
+      final refreshToken = result['refresh'] ?? '';
+      
+      // Store both tokens securely
+      await StorageService.setSecureString(AppConstants.tokenKey, token);
+      await StorageService.setSecureString(AppConstants.refreshTokenKey, refreshToken);
+      await StorageService.setString(AppConstants.userKey, result.toString());
       
       // Set token in API client
       ServiceLocator.get<ApiClient>().setAuthToken(token);
       
+      print('Login successful, token set: ${token.substring(0, 20)}...');
+      print('Refresh token stored: ${refreshToken.substring(0, 20)}...');
+      print('User data: $result');
+      
       emit(AuthAuthenticated(user: result, token: token));
     } catch (e) {
+      print('Login error: $e');
       emit(AuthError(message: e.toString()));
     }
   }

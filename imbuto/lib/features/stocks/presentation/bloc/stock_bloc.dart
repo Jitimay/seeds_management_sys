@@ -84,12 +84,15 @@ class StockBloc extends Bloc<StockEvent, StockState> {
   }
 
   Future<void> _onLoadStocks(LoadStocks event, Emitter<StockState> emit) async {
+    print('=== LOADING STOCKS ===');
     emit(StockLoading());
     try {
       final stocks = await getStocksUseCase();
+      print('Stocks loaded successfully: ${stocks.length} items');
       emit(StockLoaded(stocks));
     } catch (e) {
-      emit(StockError(e.toString()));
+      print('Error loading stocks: $e');
+      emit(StockError('Erreur de chargement: ${e.toString()}'));
     }
   }
 

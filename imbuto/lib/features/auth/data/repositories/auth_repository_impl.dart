@@ -13,16 +13,38 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Map<String, dynamic>> login(String username, String password) async {
-    final response = await apiClient.dio.post('/login/', data: {
-      'username': username,
-      'password': password,
-    });
+    print('=== LOGIN ATTEMPT ===');
+    print('Username: $username');
+    print('Endpoint: ${apiClient.dio.options.baseUrl}login/');
 
-    final data = response.data;
-    await StorageService.setSecureString(AppConstants.tokenKey, data['access']);
-    await StorageService.setString(AppConstants.userKey, data.toString());
+    try {
+      final response = await apiClient.dio.post('login/', data: {
+        'username': username,
+        'password': password,
+      });
 
-    return data;
+      print('Login success: ${response.statusCode}');
+      print('Response data: ${response.data}');
+
+      final data = response.data;
+      await StorageService.setSecureString(
+          AppConstants.tokenKey, data['access']);
+      await StorageService.setSecureString(
+          AppConstants.refreshTokenKey, data['refresh']);
+      await StorageService.setString(AppConstants.userKey, data.toString());
+
+      return data;
+    } catch (e) {
+      print('Login error: $e');
+      if (e.toString().contains('DioException')) {
+        try {
+          final dioError = e as dynamic;
+          print('Response data: ${dioError.response?.data}');
+          print('Response status: ${dioError.response?.statusCode}');
+        } catch (_) {}
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -42,7 +64,8 @@ class AuthRepositoryImpl implements AuthRepository {
     if (file != null && file is File) {
       formData.files.add(MapEntry(
         'document_justificatif',
-        await MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
+        await MultipartFile.fromFile(file.path,
+            filename: file.path.split('/').last),
       ));
     }
 
