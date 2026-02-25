@@ -13,59 +13,64 @@ class StocksListPage extends StatelessWidget {
     print('=== STOCKS PAGE OPENED ===');
     return BlocProvider(
       create: (context) => ServiceLocator.get<StockBloc>()..add(LoadStocks()),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Mes Stocks'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _showAddStockDialog(context),
-            ),
-          ],
-        ),
-        body: BlocConsumer<StockBloc, StockState>(
-          listener: (context, state) {
-            if (state is StockError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(state.message), backgroundColor: Colors.red),
-              );
-            } else if (state is StockOperationSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green),
-              );
-            }
-          },
-          builder: (context, state) {
-            if (state is StockLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is StockLoaded) {
-              if (state.stocks.isEmpty) {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.inventory_2_outlined,
-                          size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('Aucun stock disponible',
-                          style: TextStyle(fontSize: 18)),
-                      Text('Appuyez sur + pour ajouter un stock'),
-                    ],
-                  ),
+      child: Builder(
+        // Builder gives us a context that is BELOW the BlocProvider,
+        // allowing _showAddStockDialog to correctly call context.read<StockBloc>()
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Mes Stocks'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: () => _showAddStockDialog(context),
+              ),
+            ],
+          ),
+          body: BlocConsumer<StockBloc, StockState>(
+            listener: (context, state) {
+              if (state is StockError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: Colors.red),
+                );
+              } else if (state is StockOperationSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: Colors.green),
                 );
               }
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: state.stocks.length,
-                itemBuilder: (context, index) =>
-                    _buildStockCard(context, state.stocks[index]),
-              );
-            }
-            return const SizedBox();
-          },
+            },
+            builder: (context, state) {
+              if (state is StockLoading) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (state is StockLoaded) {
+                if (state.stocks.isEmpty) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.inventory_2_outlined,
+                            size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text('Aucun stock disponible',
+                            style: TextStyle(fontSize: 18)),
+                        Text('Appuyez sur + pour ajouter un stock'),
+                      ],
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: state.stocks.length,
+                  itemBuilder: (context, index) =>
+                      _buildStockCard(context, state.stocks[index]),
+                );
+              }
+              return const SizedBox();
+            },
+          ),
         ),
       ),
     );
@@ -143,37 +148,50 @@ class StocksListPage extends StatelessWidget {
   }
 
   void _showAddStockDialog(BuildContext context) {
+    final stockBloc = context.read<StockBloc>();
     showDialog(
       context: context,
-      builder: (context) => const StockFormDialog(),
+      builder: (context) => BlocProvider.value(
+        value: stockBloc,
+        child: const StockFormDialog(),
+      ),
     );
   }
 
   void _showEditStockDialog(BuildContext context, Stock stock) {
+    final stockBloc = context.read<StockBloc>();
     showDialog(
       context: context,
-      builder: (context) => StockFormDialog(stock: stock),
+      builder: (context) => BlocProvider.value(
+        value: stockBloc,
+        child: StockFormDialog(stock: stock),
+      ),
     );
   }
 
   void _confirmDelete(BuildContext context, int stockId) {
+    final stockBloc = context.read<StockBloc>();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: const Text('Êtes-vous sûr de vouloir supprimer ce stock ?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<StockBloc>().add(DeleteStock(stockId));
-            },
-            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
-          ),
-        ],
+      builder: (context) => BlocProvider.value(
+        value: stockBloc,
+        child: AlertDialog(
+          title: const Text('Confirmer la suppression'),
+          content: const Text('Êtes-vous sûr de vouloir supprimer ce stock ?'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Annuler')),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                stockBloc.add(DeleteStock(stockId));
+              },
+              child:
+                  const Text('Supprimer', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -268,7 +286,8 @@ class _StockFormDialogState extends State<StockFormDialog> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      Fluttertoast.showToast(msg: "Création du stock en cours...", backgroundColor: Colors.blue);
+      Fluttertoast.showToast(
+          msg: "Création du stock en cours...", backgroundColor: Colors.blue);
       print('Submitting stock form...');
       final stockData = {
         'category': _selectedCategory,
@@ -278,7 +297,7 @@ class _StockFormDialogState extends State<StockFormDialog> {
       };
 
       print('Stock data: $stockData');
-      
+
       if (widget.stock == null) {
         context.read<StockBloc>().add(CreateStock(stockData));
       } else {

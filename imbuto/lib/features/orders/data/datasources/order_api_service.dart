@@ -15,42 +15,44 @@ class OrderApiService {
     try {
       final response = await _apiClient.dio.get('commande/');
       print('Orders API success: ${response.statusCode}');
-
-      // Handle both paginated (Map with 'results') and non-paginated (List) responses
-      dynamic data = response.data;
-      List<dynamic> results;
-
-      if (data is Map && data.containsKey('results')) {
-        results = data['results'];
-      } else if (data is List) {
-        results = data;
-      } else {
-        print('Orders API error: Unexpected data format: ${data.runtimeType}');
-        throw Exception('Unexpected data format from API');
-      }
-
-      return List<Map<String, dynamic>>.from(results);
+      return _parseResults(response.data);
     } catch (e) {
       print('Orders API error: $e');
-      if (e.toString().contains('token_not_valid') ||
-          e.toString().contains('Token is expired')) {
-        print('Attempting token refresh...');
-        final newToken = await _refreshToken();
-        if (newToken != null) {
-          _apiClient.setAuthToken(newToken);
-          print('Retrying with new token...');
-          final response = await _apiClient.dio.get('commande/');
+      if (e is DioException) {
+        final statusCode = e.response?.statusCode;
+        final errorData = e.response?.data;
+        print('Status code: $statusCode');
+        print('Error data: $errorData');
 
-          dynamic data = response.data;
-          List<dynamic> results = (data is Map && data.containsKey('results'))
-              ? data['results']
-              : data;
-          return List<Map<String, dynamic>>.from(results);
+        if (statusCode == 401) {
+          print('Attempting token refresh...');
+          final newToken = await _refreshToken();
+          if (newToken != null) {
+            _apiClient.setAuthToken(newToken);
+            print('Retrying with new token...');
+            final response = await _apiClient.dio.get('commande/');
+            return _parseResults(response.data);
+          }
+        } else if (statusCode == 403) {
+          throw Exception(
+              'Accès refusé : votre compte multiplicateur n\'est pas encore validé.');
         }
       }
-      print('Orders API error: $e');
       rethrow;
     }
+  }
+
+  List<Map<String, dynamic>> _parseResults(dynamic data) {
+    List<dynamic> results;
+    if (data is Map && data.containsKey('results')) {
+      results = data['results'];
+    } else if (data is List) {
+      results = data;
+    } else {
+      print('API error: Unexpected data format: ${data.runtimeType}');
+      throw Exception('Unexpected data format from API');
+    }
+    return List<Map<String, dynamic>>.from(results);
   }
 
   Future<Map<String, dynamic>> createOrder(
@@ -97,6 +99,9 @@ class OrderApiService {
       return newToken;
     } catch (e) {
       print('Token refresh failed: $e');
+      // Clear expired tokens
+      await StorageService.removeSecure(AppConstants.tokenKey);
+      await StorageService.removeSecure(AppConstants.refreshTokenKey);
       return null;
     }
   }

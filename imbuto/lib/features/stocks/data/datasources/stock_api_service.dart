@@ -15,36 +15,46 @@ class StockApiService {
     try {
       final response = await _apiClient.dio.get('stock/');
       print('Stocks API success: ${response.statusCode}');
-
-      // Handle both paginated (Map with 'results') and non-paginated (List) responses
-      dynamic data = response.data;
-      List<dynamic> results;
-
-      if (data is Map && data.containsKey('results')) {
-        results = data['results'];
-      } else if (data is List) {
-        results = data;
-      } else {
-        print('Stocks API error: Unexpected data format: ${data.runtimeType}');
-        throw Exception('Unexpected data format from API');
-      }
-
-      return List<Map<String, dynamic>>.from(results);
+      return _parseResults(response.data);
     } catch (e) {
       print('Stocks API error: $e');
-      if (e.toString().contains('token_not_valid') ||
-          e.toString().contains('Token is expired')) {
-        print('Attempting token refresh...');
-        final newToken = await _refreshToken();
-        if (newToken != null) {
-          _apiClient.setAuthToken(newToken);
-          print('Retrying with new token...');
-          final response = await _apiClient.dio.get('stock/');
-          return List<Map<String, dynamic>>.from(response.data);
+      if (e is DioException) {
+        final statusCode = e.response?.statusCode;
+        final errorData = e.response?.data;
+        print('Status code: $statusCode');
+        print('Error data: $errorData');
+
+        if (statusCode == 401) {
+          print('Attempting token refresh...');
+          final newToken = await _refreshToken();
+          if (newToken != null) {
+            _apiClient.setAuthToken(newToken);
+            print('Retrying with new token...');
+            final response = await _apiClient.dio.get('stock/');
+            return _parseResults(response.data);
+          }
+        } else if (statusCode == 403) {
+          final message = errorData is Map && errorData.containsKey('status')
+              ? errorData['status']
+              : 'Accès refusé. Votre compte multiplicateur doit peut-être être validé par un administrateur.';
+          throw Exception(message);
         }
       }
       rethrow;
     }
+  }
+
+  List<Map<String, dynamic>> _parseResults(dynamic data) {
+    List<dynamic> results;
+    if (data is Map && data.containsKey('results')) {
+      results = data['results'];
+    } else if (data is List) {
+      results = data;
+    } else {
+      print('API error: Unexpected data format: ${data.runtimeType}');
+      throw Exception('Unexpected data format from API');
+    }
+    return List<Map<String, dynamic>>.from(results);
   }
 
   Future<String?> _refreshToken() async {
