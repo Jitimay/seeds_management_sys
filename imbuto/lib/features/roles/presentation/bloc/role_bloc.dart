@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../entities/user_role.dart';
+import '../../domain/entities/user_role.dart';
 
 abstract class RoleEvent extends Equatable {
   @override

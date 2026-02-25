@@ -1,37 +1,32 @@
 class AppConstants {
-  // API Configuration
-  static const String baseUrl = 'https://assma.amidev.bi/';
-  static const String loginEndpoint = 'login/';
-  static const String refreshEndpoint = 'refresh/';
+  static const String appName = 'Imbuto';
+  static const String baseUrl = 'http://127.0.0.1:8000/api/';
   
-  // Storage Keys
-  static const String accessTokenKey = 'access_token';
-  static const String refreshTokenKey = 'refresh_token';
-  static const String userDataKey = 'user_data';
-  static const String isFirstLaunchKey = 'is_first_launch';
-  
-  // User Types
-  static const String multiplicatorType = 'multiplicateurs';
+  // User types
+  static const List<String> userTypes = ['multiplicateurs', 'cultivateurs'];
   static const String cultivatorType = 'cultivateurs';
+  static const String multiplicatorType = 'multiplicateurs';
   
-  // Multiplicator Categories
+  // Multiplicator types
+  static const List<String> multiplicatorTypes = ['Pré_Bases', 'Base', 'Certifiés'];
   static const String preBasesCategory = 'Pré_Bases';
   static const String baseCategory = 'Base';
   static const String certifiedCategory = 'Certifiés';
   
-  // App Info
-  static const String appName = 'Imbuto';
-  static const String appVersion = '1.0.0';
-  
-  // Validation
-  static const int minPasswordLength = 8;
+  // Validation constants
   static const int maxUsernameLength = 30;
+  static const int minPasswordLength = 8;
   
-  // Pagination
-  static const int defaultPageSize = 20;
+  // Provinces in Burundi
+  static const List<String> provinces = [
+    'Bubanza', 'Bujumbura Mairie', 'Bujumbura Rural', 'Bururi',
+    'Cankuzo', 'Cibitoke', 'Gitega', 'Karuzi', 'Kayanza',
+    'Kirundo', 'Makamba', 'Muramvya', 'Muyinga', 'Mwaro',
+    'Ngozi', 'Rumonge', 'Rutana', 'Ruyigi'
+  ];
   
-  // File Upload
-  static const int maxFileSize = 5 * 1024 * 1024; // 5MB
-  static const List<String> allowedImageTypes = ['jpg', 'jpeg', 'png'];
-  static const List<String> allowedDocumentTypes = ['pdf', 'doc', 'docx'];
+  // Storage keys
+  static const String tokenKey = 'auth_token';
+  static const String refreshTokenKey = 'refresh_token';
+  static const String userKey = 'user_data';
 }

@@ -116,7 +116,7 @@ class _LossCard extends StatelessWidget {
           backgroundColor: Colors.red,
           child: Icon(Icons.remove, color: Colors.white),
         ),
-        title: Text(loss.stockVariety),
+        title: Text(loss.stockVariety ?? 'Variété inconnue'),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

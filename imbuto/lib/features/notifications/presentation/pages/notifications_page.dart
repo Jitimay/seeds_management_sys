@@ -160,6 +160,18 @@ class _NotificationCard extends StatelessWidget {
         return Colors.red;
       case NotificationType.newOrder:
         return Colors.teal;
+      case NotificationType.info:
+        return Colors.blue;
+      case NotificationType.warning:
+        return Colors.orange;
+      case NotificationType.error:
+        return Colors.red;
+      case NotificationType.success:
+        return Colors.green;
+      case NotificationType.order:
+        return Colors.blue;
+      case NotificationType.stock:
+        return Colors.green;
     }
   }
 
@@ -177,6 +189,18 @@ class _NotificationCard extends StatelessWidget {
         return Icons.announcement;
       case NotificationType.newOrder:
         return Icons.new_releases;
+      case NotificationType.info:
+        return Icons.info;
+      case NotificationType.warning:
+        return Icons.warning;
+      case NotificationType.error:
+        return Icons.error;
+      case NotificationType.success:
+        return Icons.check_circle;
+      case NotificationType.order:
+        return Icons.shopping_bag;
+      case NotificationType.stock:
+        return Icons.inventory_2;
     }
   }
 

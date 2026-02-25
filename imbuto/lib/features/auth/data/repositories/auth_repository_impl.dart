@@ -1,66 +1,38 @@
-import '../../domain/entities/user.dart';
-import '../../domain/repositories/auth_repository.dart';
-import '../datasources/auth_remote_datasource.dart';
-import '../models/user_model.dart';
-import '../../../core/storage/storage_service.dart';
+import 'package:imbuto/core/constants/app_constants.dart';
+import 'package:imbuto/core/network/api_client.dart';
+import 'package:imbuto/core/storage/storage_service.dart';
+import 'package:imbuto/features/auth/domain/entities/user.dart';
+import 'package:imbuto/features/auth/domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDataSource remoteDataSource;
-  
-  AuthRepositoryImpl(this.remoteDataSource);
-  
+  final ApiClient apiClient;
+
+  AuthRepositoryImpl({required this.apiClient});
+
   @override
   Future<Map<String, dynamic>> login(String username, String password) async {
-    try {
-      final result = await remoteDataSource.login(username, password);
-      
-      // Save tokens
-      await StorageService.saveAccessToken(result['access']);
-      await StorageService.saveRefreshToken(result['refresh']);
-      
-      // Save user data
-      final userData = Map<String, dynamic>.from(result);
-      userData.remove('access');
-      userData.remove('refresh');
-      await StorageService.saveUserData(userData);
-      
-      return result;
-    } catch (e) {
-      throw Exception('Login failed: ${e.toString()}');
-    }
+    final response = await apiClient.dio.post('/login/', data: {
+      'username': username,
+      'password': password,
+    });
+
+    final data = response.data;
+    await StorageService.setSecureString(AppConstants.tokenKey, data['access']);
+    await StorageService.setString(AppConstants.userKey, data.toString());
+
+    return data;
   }
-  
+
   @override
   Future<User> register(Map<String, dynamic> userData) async {
-    try {
-      return await remoteDataSource.register(userData);
-    } catch (e) {
-      throw Exception('Registration failed: ${e.toString()}');
-    }
+    final response =
+        await apiClient.dio.post('/Multiplicator/', data: userData);
+    return User.fromJson(response.data);
   }
-  
+
   @override
   Future<void> logout() async {
-    await StorageService.clearAll();
-    await remoteDataSource.logout();
-  }
-  
-  @override
-  Future<User?> getCurrentUser() async {
-    final userData = StorageService.getUserData();
-    if (userData != null) {
-      return UserModel.fromJson(userData);
-    }
-    return null;
-  }
-  
-  @override
-  Future<void> requestPasswordReset(String email) async {
-    await remoteDataSource.requestPasswordReset(email);
-  }
-  
-  @override
-  Future<void> confirmPasswordReset(String token, String newPassword) async {
-    await remoteDataSource.confirmPasswordReset(token, newPassword);
+    await StorageService.clear();
+    await StorageService.clearSecure();
   }
 }

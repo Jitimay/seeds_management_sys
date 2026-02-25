@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../features/auth/presentation/bloc/auth_state.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -36,7 +37,7 @@ class ProfilePage extends StatelessWidget {
                             radius: 50,
                             backgroundColor: Theme.of(context).primaryColor,
                             child: Text(
-                              '${state.user.firstName[0]}${state.user.lastName[0]}',
+                              '${(state.user['first_name'] ?? '')[0] ?? ''}${(state.user['last_name'] ?? '')[0] ?? ''}',
                               style: const TextStyle(
                                 fontSize: 32,
                                 color: Colors.white,
@@ -46,22 +47,25 @@ class ProfilePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            '${state.user.firstName} ${state.user.lastName}',
+                            '${state.user['first_name'] ?? ''} ${state.user['last_name'] ?? ''}',
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '@${state.user.username}',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey,
-                            ),
+                            '@${state.user['username'] ?? ''}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Colors.grey,
+                                ),
                           ),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Profile Information
                   Card(
                     child: Padding(
@@ -74,17 +78,21 @@ class ProfilePage extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 16),
-                          _buildInfoRow('Email', state.user.email),
-                          _buildInfoRow('Téléphone', state.user.phoneNumber ?? 'Non renseigné'),
-                          _buildInfoRow('Province', state.user.province ?? 'Non renseigné'),
-                          _buildInfoRow('Commune', state.user.commune ?? 'Non renseigné'),
-                          _buildInfoRow('Colline', state.user.colline ?? 'Non renseigné'),
+                          _buildInfoRow('Email', state.user['email'] ?? ''),
+                          _buildInfoRow('Téléphone',
+                              state.user['phone_number'] ?? 'Non renseigné'),
+                          _buildInfoRow('Province',
+                              state.user['province'] ?? 'Non renseigné'),
+                          _buildInfoRow(
+                              'Commune', state.user['commune'] ?? 'Non renseigné'),
+                          _buildInfoRow(
+                              'Colline', state.user['colline'] ?? 'Non renseigné'),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Account Status
                   Card(
                     child: Padding(
@@ -97,10 +105,11 @@ class ProfilePage extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 16),
-                          _buildInfoRow('Type', state.user.role ?? 'Utilisateur'),
+                          _buildInfoRow(
+                              'Type', state.user['role'] ?? 'Utilisateur'),
                           _buildInfoRow(
                             'Type multiplicateur',
-                            state.user.typeMultiplicator ?? 'Non applicable',
+                            state.user['type_multiplicator'] ?? 'Non applicable',
                           ),
                           const SizedBox(height: 8),
                           Row(
@@ -115,11 +124,15 @@ class ProfilePage extends StatelessWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: state.user.isValidated ? Colors.green : Colors.orange,
+                                  color: (state.user['is_validated'] ?? false)
+                                      ? Colors.green
+                                      : Colors.orange,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  state.user.isValidated ? 'Validé' : 'En attente',
+                                  (state.user['is_validated'] ?? false)
+                                      ? 'Validé'
+                                      : 'En attente',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
@@ -133,7 +146,7 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Actions
                   Card(
                     child: Column(
@@ -173,7 +186,7 @@ class ProfilePage extends StatelessWidget {
               ),
             );
           }
-          
+
           return const Center(
             child: CircularProgressIndicator(),
           );

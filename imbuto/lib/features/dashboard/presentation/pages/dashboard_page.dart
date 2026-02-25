@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../auth/presentation/bloc/auth_bloc.dart';
+import 'package:imbuto/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:imbuto/features/auth/presentation/bloc/auth_event.dart';
+import 'package:imbuto/features/auth/presentation/bloc/auth_state.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -37,17 +39,17 @@ class DashboardPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Bienvenue, ${state.user.firstName} ${state.user.lastName}',
+                            'Bienvenue, ${state.user['first_name'] ?? ''} ${state.user['last_name'] ?? ''}',
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Type: ${state.user.role ?? 'Utilisateur'}',
+                            'Type: ${state.user['role'] ?? 'Utilisateur'}',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
-                          if (state.user.province != null) ...[
+                          if (state.user['province'] != null) ...[
                             Text(
-                              'Localisation: ${state.user.province}, ${state.user.commune}',
+                              'Localisation: ${state.user['province']}, ${state.user['commune']}',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
@@ -58,11 +60,15 @@ class DashboardPage extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: state.user.isValidated ? Colors.green : Colors.orange,
+                              color: (state.user['is_validated'] ?? false)
+                                  ? Colors.green
+                                  : Colors.orange,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              state.user.isValidated ? 'Validé' : 'En attente de validation',
+                              (state.user['is_validated'] ?? false)
+                                  ? 'Validé'
+                                  : 'En attente de validation',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -74,14 +80,14 @@ class DashboardPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Quick Actions Grid
                   Text(
                     'Actions rapides',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -131,7 +137,7 @@ class DashboardPage extends StatelessWidget {
                         Colors.orange,
                         () => context.go('/notifications'),
                       ),
-                      if (state.user.role == 'superuser') ...[
+                      if (state.user['role'] == 'superuser') ...[
                         _buildActionCard(
                           context,
                           'Administration',
@@ -142,16 +148,16 @@ class DashboardPage extends StatelessWidget {
                       ],
                     ],
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Recent Activity (placeholder)
                   Text(
                     'Activité récente',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -170,9 +176,10 @@ class DashboardPage extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             'Vos dernières actions apparaîtront ici',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: Colors.grey),
                           ),
                         ],
                       ),
@@ -182,7 +189,7 @@ class DashboardPage extends StatelessWidget {
               ),
             );
           }
-          
+
           return const Center(
             child: CircularProgressIndicator(),
           );
@@ -207,11 +214,7 @@ class DashboardPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 48,
-                color: color,
-              ),
+              Icon(icon, size: 48, color: color),
               const SizedBox(height: 12),
               Text(
                 title,

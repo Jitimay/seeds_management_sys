@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../entities/loss.dart';
+import '../../domain/entities/loss.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/services/service_locator.dart';
 

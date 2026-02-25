@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:imbuto/core/constants/app_constants.dart';
 import '../bloc/auth_bloc.dart';
-import '../../../core/constants/app_constants.dart';
+import '../bloc/auth_state.dart';
+import '../bloc/auth_event.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -23,7 +25,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _provinceController = TextEditingController();
   final _communeController = TextEditingController();
   final _collineController = TextEditingController();
-  
+
   String _selectedUserType = AppConstants.cultivatorType;
   String? _selectedMultiplicatorType;
   bool _obscurePassword = true;
@@ -120,7 +122,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Multiplicator Type (if multiplicator selected)
                 if (_selectedUserType == AppConstants.multiplicatorType) ...[
                   DropdownButtonFormField<String>(
@@ -128,18 +130,18 @@ class _RegisterPageState extends State<RegisterPage> {
                       labelText: 'Type de multiplicateur',
                     ),
                     value: _selectedMultiplicatorType,
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: AppConstants.preBasesCategory,
-                        child: Text('Pré-Bases'),
+                        child: const Text('Pré-Bases'),
                       ),
                       DropdownMenuItem(
                         value: AppConstants.baseCategory,
-                        child: Text('Base'),
+                        child: const Text('Base'),
                       ),
                       DropdownMenuItem(
                         value: AppConstants.certifiedCategory,
-                        child: Text('Certifiés'),
+                        child: const Text('Certifiés'),
                       ),
                     ],
                     onChanged: (value) {
@@ -148,7 +150,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       });
                     },
                     validator: (value) {
-                      if (_selectedUserType == AppConstants.multiplicatorType && value == null) {
+                      if (_selectedUserType == AppConstants.multiplicatorType &&
+                          value == null) {
                         return 'Veuillez sélectionner un type de multiplicateur';
                       }
                       return null;
@@ -156,7 +159,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                
+
                 // Personal Information
                 Row(
                   children: [
@@ -192,7 +195,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 TextFormField(
                   controller: _usernameController,
                   decoration: const InputDecoration(
@@ -209,7 +212,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -220,14 +223,15 @@ class _RegisterPageState extends State<RegisterPage> {
                     if (value == null || value.isEmpty) {
                       return 'Veuillez saisir votre email';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(value)) {
                       return 'Email invalide';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -242,7 +246,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Location Information
                 Row(
                   children: [
@@ -278,7 +282,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 TextFormField(
                   controller: _collineController,
                   decoration: const InputDecoration(
@@ -292,7 +296,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Password Fields
                 TextFormField(
                   controller: _passwordController,
@@ -301,7 +305,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     labelText: 'Mot de passe',
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -321,7 +327,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
@@ -329,7 +335,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     labelText: 'Confirmer le mot de passe',
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                        _obscureConfirmPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -346,7 +354,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Register Button
                 BlocBuilder<AuthBloc, AuthState>(
                   builder: (context, state) {
@@ -359,7 +367,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 TextButton(
                   onPressed: () => context.go('/login'),
                   child: const Text('Déjà un compte ? Se connecter'),

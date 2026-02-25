@@ -1,60 +1,53 @@
-import 'package:hive/hive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../constants/app_constants.dart';
 
 class StorageService {
-  static late Box _box;
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  static late SharedPreferences _prefs;
+  static const _secureStorage = FlutterSecureStorage();
   
   static Future<void> init() async {
-    _box = await Hive.openBox('imbuto_storage');
+    _prefs = await SharedPreferences.getInstance();
   }
   
-  // Secure storage for tokens
-  static Future<void> saveAccessToken(String token) async {
-    await _secureStorage.write(key: AppConstants.accessTokenKey, value: token);
+  // Regular storage
+  static Future<void> setString(String key, String value) async {
+    await _prefs.setString(key, value);
   }
   
-  static Future<void> saveRefreshToken(String token) async {
-    await _secureStorage.write(key: AppConstants.refreshTokenKey, value: token);
+  static String? getString(String key) {
+    return _prefs.getString(key);
   }
   
-  static Future<String?> getAccessToken() async {
-    return await _secureStorage.read(key: AppConstants.accessTokenKey);
+  static Future<void> setBool(String key, bool value) async {
+    await _prefs.setBool(key, value);
   }
   
-  static Future<String?> getRefreshToken() async {
-    return await _secureStorage.read(key: AppConstants.refreshTokenKey);
+  static bool? getBool(String key) {
+    return _prefs.getBool(key);
   }
   
-  static Future<void> clearTokens() async {
-    await _secureStorage.delete(key: AppConstants.accessTokenKey);
-    await _secureStorage.delete(key: AppConstants.refreshTokenKey);
+  static Future<void> remove(String key) async {
+    await _prefs.remove(key);
   }
   
-  // Regular storage for user data
-  static Future<void> saveUserData(Map<String, dynamic> userData) async {
-    await _box.put(AppConstants.userDataKey, userData);
+  static Future<void> clear() async {
+    await _prefs.clear();
   }
   
-  static Map<String, dynamic>? getUserData() {
-    return _box.get(AppConstants.userDataKey);
+  // Secure storage
+  static Future<void> setSecureString(String key, String value) async {
+    await _secureStorage.write(key: key, value: value);
   }
   
-  static Future<void> clearUserData() async {
-    await _box.delete(AppConstants.userDataKey);
+  static Future<String?> getSecureString(String key) async {
+    return await _secureStorage.read(key: key);
   }
   
-  static Future<void> setFirstLaunch(bool isFirst) async {
-    await _box.put(AppConstants.isFirstLaunchKey, isFirst);
+  static Future<void> removeSecure(String key) async {
+    await _secureStorage.delete(key: key);
   }
   
-  static bool isFirstLaunch() {
-    return _box.get(AppConstants.isFirstLaunchKey, defaultValue: true);
-  }
-  
-  static Future<void> clearAll() async {
-    await clearTokens();
-    await _box.clear();
+  static Future<void> clearSecure() async {
+    await _secureStorage.deleteAll();
   }
 }

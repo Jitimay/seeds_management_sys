@@ -1,7 +1,7 @@
 import '../../domain/entities/user.dart';
 
 class UserModel extends User {
-  const UserModel({
+  UserModel({
     required super.id,
     required super.username,
     required super.email,
@@ -33,6 +33,7 @@ class UserModel extends User {
     );
   }
   
+  @override
   Map<String, dynamic> toJson() {
     return {
       'id': id,

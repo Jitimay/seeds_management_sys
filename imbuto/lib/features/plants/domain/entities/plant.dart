@@ -1,16 +1,19 @@
-import 'package:equatable/equatable.dart';
-
-class Plant extends Equatable {
+class Plant {
   final int id;
   final String name;
   final DateTime createdAt;
-
-  const Plant({
+  
+  Plant({
     required this.id,
     required this.name,
     required this.createdAt,
   });
-
-  @override
-  List<Object?> get props => [id, name, createdAt];
+  
+  factory Plant.fromJson(Map<String, dynamic> json) {
+    return Plant(
+      id: json['id'],
+      name: json['name'],
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
 }

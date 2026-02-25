@@ -1,31 +1,33 @@
-import 'package:equatable/equatable.dart';
-
-class UserRole extends Equatable {
+class UserRole {
   final int id;
   final int multiplicatorId;
   final String typeMultiplicator;
-  final String? documentUrl;
+  final String document;
   final bool isValidated;
   final DateTime? validatedAt;
-  final String? validatedBy;
-  final String? validationReason;
   final DateTime createdAt;
-
-  const UserRole({
+  
+  UserRole({
     required this.id,
     required this.multiplicatorId,
     required this.typeMultiplicator,
-    this.documentUrl,
+    required this.document,
     required this.isValidated,
     this.validatedAt,
-    this.validatedBy,
-    this.validationReason,
     required this.createdAt,
   });
-
-  @override
-  List<Object?> get props => [
-    id, multiplicatorId, typeMultiplicator, documentUrl, isValidated,
-    validatedAt, validatedBy, validationReason, createdAt,
-  ];
+  
+  factory UserRole.fromJson(Map<String, dynamic> json) {
+    return UserRole(
+      id: json['id'],
+      multiplicatorId: json['multiplicator'],
+      typeMultiplicator: json['type_multiplicator'],
+      document: json['document'],
+      isValidated: json['is_validated'],
+      validatedAt: json['validated_at'] != null 
+          ? DateTime.parse(json['validated_at']) 
+          : null,
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
 }

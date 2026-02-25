@@ -1,6 +1,4 @@
-import 'package:equatable/equatable.dart';
-
-class User extends Equatable {
+class User {
   final int id;
   final String username;
   final String email;
@@ -14,7 +12,7 @@ class User extends Equatable {
   final String? colline;
   final String? phoneNumber;
   
-  const User({
+  User({
     required this.id,
     required this.username,
     required this.email,
@@ -29,19 +27,37 @@ class User extends Equatable {
     this.phoneNumber,
   });
   
-  @override
-  List<Object?> get props => [
-    id,
-    username,
-    email,
-    firstName,
-    lastName,
-    role,
-    isValidated,
-    typeMultiplicator,
-    province,
-    commune,
-    colline,
-    phoneNumber,
-  ];
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'] ?? 0,
+      username: json['username'] ?? '',
+      email: json['email'] ?? '',
+      firstName: json['first_name'] ?? '',
+      lastName: json['last_name'] ?? '',
+      role: json['role'],
+      isValidated: json['is_validated'] ?? false,
+      typeMultiplicator: json['type_multiplicator'],
+      province: json['province'],
+      commune: json['commune'],
+      colline: json['colline'],
+      phoneNumber: json['phone_number'],
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'email': email,
+      'first_name': firstName,
+      'last_name': lastName,
+      'role': role,
+      'is_validated': isValidated,
+      'type_multiplicator': typeMultiplicator,
+      'province': province,
+      'commune': commune,
+      'colline': colline,
+      'phone_number': phoneNumber,
+    };
+  }
 }

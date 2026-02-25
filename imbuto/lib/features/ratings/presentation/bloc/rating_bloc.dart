@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../entities/rating.dart';
+import '../../domain/entities/rating.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/services/service_locator.dart';
 
@@ -96,7 +96,7 @@ class RatingBloc extends Bloc<RatingEvent, RatingState> {
       
       final averageRating = ratings.isEmpty 
           ? 0.0 
-          : ratings.fold(0, (sum, rating) => sum + rating.etoiles) / ratings.length;
+          : ratings.fold(0.0, (sum, rating) => sum + rating.etoiles) / ratings.length;
       
       emit(RatingLoaded(ratings, averageRating));
     } catch (e) {

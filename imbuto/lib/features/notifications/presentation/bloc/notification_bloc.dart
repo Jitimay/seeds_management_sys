@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../entities/notification.dart';
+import '../../domain/entities/notification.dart';
 
 abstract class NotificationEvent extends Equatable {
   @override
