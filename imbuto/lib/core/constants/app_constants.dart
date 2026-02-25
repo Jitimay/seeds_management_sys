@@ -1,6 +1,6 @@
 class AppConstants {
   static const String appName = 'Imbuto';
-  static const String baseUrl = 'http://127.0.0.1:8000/api/';
+  static const String baseUrl = 'https://assma.amidev.bi/';
   
   // User types
   static const List<String> userTypes = ['multiplicateurs', 'cultivateurs'];

@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:imbuto/core/services/api_service.dart';
 import '../../core/network/api_client.dart';
+import '../../core/constants/app_constants.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
@@ -13,7 +14,7 @@ final GetIt sl = GetIt.instance;
 class ServiceLocator {
   static Future<void> init() async {
     // Core
-    sl.registerLazySingleton(() => ApiClient());
+    sl.registerLazySingleton(() => ApiClient(baseUrl: AppConstants.baseUrl));
     sl.registerLazySingleton(() => ApiService(sl()));
 
     // Data sources

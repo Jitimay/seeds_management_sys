@@ -152,7 +152,7 @@ REST_FRAMEWORK = {
 }
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# FRONTEND_URL = "https://127.0.0.1:8000/" # il ne fonctionne pas 
+# FRONTEND_URL = "https://assma.amidev.bi/" 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'

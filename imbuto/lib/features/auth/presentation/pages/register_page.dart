@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:imbuto/core/constants/app_constants.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_state.dart';
 import '../bloc/auth_event.dart';
+import 'package:fluttertoast/fluttertoast.dart'; // Added import
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -28,6 +31,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   String _selectedUserType = AppConstants.cultivatorType;
   String? _selectedMultiplicatorType;
+  File? _documentFile;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -46,6 +50,15 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  Future<void> _pickDocument() async {
+    final result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      setState(() {
+        _documentFile = File(result.files.single.path!);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,19 +72,26 @@ class _RegisterPageState extends State<RegisterPage> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthRegistrationSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Inscription réussie! En attente de validation.'),
-                backgroundColor: Colors.green,
-              ),
+            Fluttertoast.showToast(
+              msg: 'Inscription réussie! En attente de validation.',
+              toastLength: Toast.LENGTH_LONG,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: Colors.green,
+              textColor: Colors.white,
+              fontSize: 16.0,
             );
-            context.go('/login');
+            // Add a small delay to allow the toast to be seen before navigating
+            Future.delayed(const Duration(seconds: 2), () {
+              context.go('/login');
+            });
           } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
+            Fluttertoast.showToast(
+              msg: state.message,
+              toastLength: Toast.LENGTH_LONG,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: Colors.red,
+              textColor: Colors.white,
+              fontSize: 16.0,
             );
           }
         },
@@ -104,6 +124,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             setState(() {
                               _selectedUserType = value!;
                               _selectedMultiplicatorType = null;
+                              _documentFile = null;
                             });
                           },
                         ),
@@ -123,7 +144,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Multiplicator Type (if multiplicator selected)
+                // Multiplicator Fields (if multiplicator selected)
                 if (_selectedUserType == AppConstants.multiplicatorType) ...[
                   DropdownButtonFormField<String>(
                     decoration: const InputDecoration(
@@ -155,6 +176,50 @@ class _RegisterPageState extends State<RegisterPage> {
                         return 'Veuillez sélectionner un type de multiplicateur';
                       }
                       return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  FormField<File>(
+                    validator: (value) {
+                      if (_selectedUserType == AppConstants.multiplicatorType &&
+                          _documentFile == null) {
+                        return 'Veuillez sélectionner un document justificatif';
+                      }
+                      return null;
+                    },
+                    builder: (state) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: _pickDocument,
+                                icon: const Icon(Icons.attach_file),
+                                label: const Text('Document Justificatif'),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  _documentFile?.path.split('/').last ?? 'Aucun fichier',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (state.hasError)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0, left: 12.0),
+                              child: Text(
+                                state.errorText!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
@@ -397,6 +462,7 @@ class _RegisterPageState extends State<RegisterPage> {
         'commune': _communeController.text.trim(),
         'colline': _collineController.text.trim(),
         'phone_number': _phoneController.text.trim(),
+        'document_justificatif': _documentFile,
       };
 
       context.read<AuthBloc>().add(RegisterRequested(userData: userData));

@@ -6,7 +6,7 @@ class AuthRemoteDataSource {
   AuthRemoteDataSource({required this.apiClient});
 
   Future<Map<String, dynamic>> login(String username, String password) async {
-    final response = await apiClient.dio.post('/login/', data: {
+    final response = await apiClient.dio.post('login/', data: {
       'username': username,
       'password': password,
     });
@@ -15,7 +15,7 @@ class AuthRemoteDataSource {
 
   Future<Map<String, dynamic>> register(Map<String, dynamic> userData) async {
     final response =
-        await apiClient.dio.post('/Multiplicator/', data: userData);
+        await apiClient.dio.post('Multiplicator/', data: userData);
     return response.data;
   }
 }

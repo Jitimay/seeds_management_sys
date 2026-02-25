@@ -109,6 +109,7 @@ class MultiplicatorViewset(viewsets.ModelViewSet):
         data = serializer.validated_data
 
         user_data = data.pop('user')
+        password = user_data.pop('password')
         groups = user_data.pop('groups', [])
 
         existing_user = User.objects.filter(username=user_data['username']).first()
@@ -128,9 +129,8 @@ class MultiplicatorViewset(viewsets.ModelViewSet):
             return Response({'status': 'Document justificatif requis pour les multiplicateurs'}, 400)
 
         user = User(**user_data)
-        user.set_password(user_data['password'])
+        user.set_password(password)
         user.is_active = selected_type == 'cultivateurs'
-        user.is_active = True
         user.save()
         user.groups.set(groups)
 
