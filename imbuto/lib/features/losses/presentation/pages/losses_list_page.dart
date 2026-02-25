@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../stocks/data/datasources/stock_api_service.dart';
 import '../bloc/loss_bloc.dart';
@@ -26,16 +27,16 @@ class LossesListPage extends StatelessWidget {
           body: BlocConsumer<LossBloc, LossState>(
             listener: (context, state) {
               if (state is LossError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.red),
+                Fluttertoast.showToast(
+                  msg: state.message,
+                  backgroundColor: Colors.red,
+                  textColor: Colors.white,
                 );
               } else if (state is LossOperationSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.green),
+                Fluttertoast.showToast(
+                  msg: state.message,
+                  backgroundColor: Colors.green,
+                  textColor: Colors.white,
                 );
               }
             },

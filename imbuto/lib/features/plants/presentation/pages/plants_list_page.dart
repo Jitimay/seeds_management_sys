@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../bloc/plant_bloc.dart';
 import '../../domain/entities/plant.dart';
 
@@ -24,16 +25,16 @@ class PlantsListPage extends StatelessWidget {
           body: BlocConsumer<PlantBloc, PlantState>(
             listener: (context, state) {
               if (state is PlantError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.red),
+                Fluttertoast.showToast(
+                  msg: state.message,
+                  backgroundColor: Colors.red,
+                  textColor: Colors.white,
                 );
               } else if (state is PlantOperationSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.green),
+                Fluttertoast.showToast(
+                  msg: state.message,
+                  backgroundColor: Colors.green,
+                  textColor: Colors.white,
                 );
               }
             },

@@ -30,16 +30,16 @@ class StocksListPage extends StatelessWidget {
           body: BlocConsumer<StockBloc, StockState>(
             listener: (context, state) {
               if (state is StockError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.red),
+                Fluttertoast.showToast(
+                  msg: state.message,
+                  backgroundColor: Colors.red,
+                  textColor: Colors.white,
                 );
               } else if (state is StockOperationSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.green),
+                Fluttertoast.showToast(
+                  msg: state.message,
+                  backgroundColor: Colors.green,
+                  textColor: Colors.white,
                 );
               }
             },
@@ -102,7 +102,7 @@ class StocksListPage extends StatelessWidget {
                 ),
                 PopupMenuButton(
                   itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'edit', child: Text('Modifier')),
+                    // const PopupMenuItem(value: 'edit', child: Text('Modifier')),
                     const PopupMenuItem(
                         value: 'delete', child: Text('Supprimer')),
                   ],

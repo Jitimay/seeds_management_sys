@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/admin_validation.dart';
 import '../bloc/admin_bloc.dart';
@@ -27,15 +28,16 @@ class AdminDashboardPage extends StatelessWidget {
         body: BlocConsumer<AdminBloc, AdminState>(
           listener: (context, state) {
             if (state is AdminError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(state.message), backgroundColor: Colors.red),
+              Fluttertoast.showToast(
+                msg: state.message,
+                backgroundColor: Colors.red,
+                textColor: Colors.white,
               );
             } else if (state is AdminOperationSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green),
+              Fluttertoast.showToast(
+                msg: state.message,
+                backgroundColor: Colors.green,
+                textColor: Colors.white,
               );
             }
           },

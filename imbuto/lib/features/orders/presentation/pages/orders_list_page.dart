@@ -28,16 +28,16 @@ class OrdersListPage extends StatelessWidget {
           body: BlocConsumer<OrderBloc, OrderState>(
             listener: (context, state) {
               if (state is OrderError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.red),
+                Fluttertoast.showToast(
+                  msg: state.message,
+                  backgroundColor: Colors.red,
+                  textColor: Colors.white,
                 );
               } else if (state is OrderOperationSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.green),
+                Fluttertoast.showToast(
+                  msg: state.message,
+                  backgroundColor: Colors.green,
+                  textColor: Colors.white,
                 );
               }
             },
@@ -101,7 +101,7 @@ class OrdersListPage extends StatelessWidget {
                     ],
                   ),
                 ),
-                PopupMenuButton(
+                /* PopupMenuButton(
                   itemBuilder: (context) => [
                     if (!order.isDelivered)
                       const PopupMenuItem(
@@ -119,7 +119,7 @@ class OrdersListPage extends StatelessWidget {
                       _showPaymentDialog(context, order);
                     }
                   },
-                ),
+                ), */
               ],
             ),
             const SizedBox(height: 12),

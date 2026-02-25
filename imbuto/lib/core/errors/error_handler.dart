@@ -1,68 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class ErrorHandler {
   static void showError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
-      ),
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
     );
   }
-  
+
   static void showSuccess(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
     );
   }
-  
+
   static void showWarning(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.orange,
-      ),
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: Colors.orange,
+      textColor: Colors.white,
     );
   }
-  
+
   static String getErrorMessage(dynamic error) {
     if (error is String) return error;
-    
+
     // Handle different error types
     if (error.toString().contains('SocketException')) {
       return 'Problème de connexion internet';
     }
-    
+
     if (error.toString().contains('TimeoutException')) {
       return 'Délai d\'attente dépassé';
     }
-    
+
     if (error.toString().contains('401')) {
       return 'Session expirée, veuillez vous reconnecter';
     }
-    
+
     if (error.toString().contains('403')) {
       return 'Accès non autorisé';
     }
-    
+
     if (error.toString().contains('404')) {
       return 'Ressource non trouvée';
     }
-    
+
     if (error.toString().contains('500')) {
       return 'Erreur du serveur';
     }
-    
+
     return 'Une erreur inattendue s\'est produite';
   }
 }
@@ -70,13 +61,13 @@ class ErrorHandler {
 class GlobalErrorWidget extends StatelessWidget {
   final String error;
   final VoidCallback? onRetry;
-  
+
   const GlobalErrorWidget({
     super.key,
     required this.error,
     this.onRetry,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Center(

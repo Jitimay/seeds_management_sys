@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../bloc/notification_bloc.dart';
 import '../../domain/entities/notification.dart';
 
@@ -42,12 +43,16 @@ class NotificationsPage extends StatelessWidget {
         body: BlocConsumer<NotificationBloc, NotificationState>(
           listener: (context, state) {
             if (state is NotificationError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+              Fluttertoast.showToast(
+                msg: state.message,
+                backgroundColor: Colors.red,
+                textColor: Colors.white,
               );
             } else if (state is NotificationOperationSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.green),
+              Fluttertoast.showToast(
+                msg: state.message,
+                backgroundColor: Colors.green,
+                textColor: Colors.white,
               );
             }
           },
@@ -60,7 +65,8 @@ class NotificationsPage extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.notifications_none, size: 64, color: Colors.grey),
+                      Icon(Icons.notifications_none,
+                          size: 64, color: Colors.grey),
                       SizedBox(height: 16),
                       Text('Aucune notification'),
                       Text('Vous êtes à jour !'),
@@ -68,7 +74,7 @@ class NotificationsPage extends StatelessWidget {
                   ),
                 );
               }
-              
+
               return ListView.builder(
                 itemCount: state.notifications.length,
                 itemBuilder: (context, index) {
@@ -77,7 +83,9 @@ class NotificationsPage extends StatelessWidget {
                     notification: notification,
                     onTap: () {
                       if (!notification.isRead) {
-                        context.read<NotificationBloc>().add(MarkAsRead(notification.id));
+                        context
+                            .read<NotificationBloc>()
+                            .add(MarkAsRead(notification.id));
                       }
                     },
                   );
@@ -117,7 +125,8 @@ class _NotificationCard extends StatelessWidget {
         title: Text(
           notification.title,
           style: TextStyle(
-            fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
+            fontWeight:
+                notification.isRead ? FontWeight.normal : FontWeight.bold,
           ),
         ),
         subtitle: Column(
@@ -131,8 +140,8 @@ class _NotificationCard extends StatelessWidget {
             ),
           ],
         ),
-        trailing: notification.isRead 
-            ? null 
+        trailing: notification.isRead
+            ? null
             : Container(
                 width: 8,
                 height: 8,
@@ -207,7 +216,7 @@ class _NotificationCard extends StatelessWidget {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays > 0) {
       return '${difference.inDays}j';
     } else if (difference.inHours > 0) {
