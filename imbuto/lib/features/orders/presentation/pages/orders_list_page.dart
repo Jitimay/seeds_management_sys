@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../bloc/order_bloc.dart';
 import '../../domain/entities/order.dart';
+import '../../../stocks/data/datasources/stock_api_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class OrdersListPage extends StatelessWidget {
@@ -13,58 +14,61 @@ class OrdersListPage extends StatelessWidget {
     print('=== ORDERS PAGE OPENED ===');
     return BlocProvider(
       create: (context) => ServiceLocator.get<OrderBloc>()..add(LoadOrders()),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Mes Commandes'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.add_shopping_cart),
-              onPressed: () => _showCreateOrderDialog(context),
-            ),
-          ],
-        ),
-        body: BlocConsumer<OrderBloc, OrderState>(
-          listener: (context, state) {
-            if (state is OrderError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(state.message), backgroundColor: Colors.red),
-              );
-            } else if (state is OrderOperationSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green),
-              );
-            }
-          },
-          builder: (context, state) {
-            if (state is OrderLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is OrderLoaded) {
-              if (state.orders.isEmpty) {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.shopping_cart_outlined,
-                          size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('Aucune commande', style: TextStyle(fontSize: 18)),
-                      Text('Appuyez sur + pour créer une commande'),
-                    ],
-                  ),
+      child: Builder(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Mes Commandes'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.add_shopping_cart),
+                onPressed: () => _showCreateOrderDialog(context),
+              ),
+            ],
+          ),
+          body: BlocConsumer<OrderBloc, OrderState>(
+            listener: (context, state) {
+              if (state is OrderError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: Colors.red),
+                );
+              } else if (state is OrderOperationSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: Colors.green),
                 );
               }
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: state.orders.length,
-                itemBuilder: (context, index) =>
-                    _buildOrderCard(context, state.orders[index]),
-              );
-            }
-            return const SizedBox();
-          },
+            },
+            builder: (context, state) {
+              if (state is OrderLoading) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (state is OrderLoaded) {
+                if (state.orders.isEmpty) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.shopping_cart_outlined,
+                            size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text('Aucune commande', style: TextStyle(fontSize: 18)),
+                        Text('Appuyez sur + pour créer une commande'),
+                      ],
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: state.orders.length,
+                  itemBuilder: (context, index) =>
+                      _buildOrderCard(context, state.orders[index]),
+                );
+              }
+              return const SizedBox();
+            },
+          ),
         ),
       ),
     );
@@ -181,47 +185,55 @@ class OrdersListPage extends StatelessWidget {
   }
 
   void _showCreateOrderDialog(BuildContext context) {
+    final orderBloc = context.read<OrderBloc>();
     showDialog(
       context: context,
-      builder: (context) => const OrderFormDialog(),
+      builder: (context) => BlocProvider.value(
+        value: orderBloc,
+        child: const OrderFormDialog(),
+      ),
     );
   }
 
   void _showPaymentDialog(BuildContext context, Order order) {
+    final orderBloc = context.read<OrderBloc>();
     final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Mettre à jour le paiement'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Total: ${order.montantTotal} BIF'),
-            Text('Déjà payé: ${order.montantPaye} BIF'),
-            Text('Restant: ${order.montantTotal - order.montantPaye} BIF'),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: controller,
-              decoration: const InputDecoration(labelText: 'Montant payé'),
-              keyboardType: TextInputType.number,
+      builder: (context) => BlocProvider.value(
+        value: orderBloc,
+        child: AlertDialog(
+          title: const Text('Mettre à jour le paiement'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Total: ${order.montantTotal} BIF'),
+              Text('Déjà payé: ${order.montantPaye} BIF'),
+              Text('Restant: ${order.montantTotal - order.montantPaye} BIF'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: controller,
+                decoration: const InputDecoration(labelText: 'Montant payé'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Annuler')),
+            TextButton(
+              onPressed: () {
+                final amount = int.tryParse(controller.text) ?? 0;
+                if (amount > 0) {
+                  orderBloc.add(UpdatePayment(order.id, amount));
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Confirmer'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler')),
-          TextButton(
-            onPressed: () {
-              final amount = int.tryParse(controller.text) ?? 0;
-              if (amount > 0) {
-                context.read<OrderBloc>().add(UpdatePayment(order.id, amount));
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Confirmer'),
-          ),
-        ],
       ),
     );
   }
@@ -236,10 +248,40 @@ class OrderFormDialog extends StatefulWidget {
 
 class _OrderFormDialogState extends State<OrderFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _buyerController = TextEditingController();
-  final _varietyController = TextEditingController();
   final _quantityController = TextEditingController();
-  final _priceController = TextEditingController();
+
+  List<Map<String, dynamic>> _stocks = [];
+  int? _selectedStockId;
+  bool _loadingStocks = true;
+  double? _availableQuantity;
+  int? _unitPrice;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStocks();
+  }
+
+  Future<void> _loadStocks() async {
+    try {
+      final stockApiService = ServiceLocator.get<StockApiService>();
+      final stocks = await stockApiService.getStocksPublic();
+      if (mounted) {
+        setState(() {
+          _stocks = stocks;
+          _loadingStocks = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loadingStocks = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -247,51 +289,85 @@ class _OrderFormDialogState extends State<OrderFormDialog> {
       title: const Text('Nouvelle Commande'),
       content: SizedBox(
         width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _buyerController,
-                  decoration:
-                      const InputDecoration(labelText: 'Nom de l\'acheteur'),
-                  validator: (value) =>
-                      value?.isEmpty == true ? 'Requis' : null,
+        child: _loadingStocks
+            ? const SizedBox(
+                height: 100, child: Center(child: CircularProgressIndicator()))
+            : SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<int>(
+                        value: _selectedStockId,
+                        isExpanded: true,
+                        items: _stocks
+                            .where((s) => s['validated_at'] != null)
+                            .map((s) => DropdownMenuItem<int>(
+                                  value: s['id'] as int,
+                                  child: Text(
+                                    '${s['variety_info']?['nom'] ?? 'Inconnu'} - ${s['category']} (${s['qte_restante']} kg dispo)',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          final selectedStock =
+                              _stocks.firstWhere((s) => s['id'] == value);
+                          setState(() {
+                            _selectedStockId = value;
+                            _availableQuantity =
+                                (selectedStock['qte_restante'] as num)
+                                    .toDouble();
+                            _unitPrice =
+                                selectedStock['prix_vente_unitaire'] as int;
+                          });
+                        },
+                        decoration: const InputDecoration(
+                            labelText: 'Sélectionner le lot de semences'),
+                        validator: (value) =>
+                            value == null ? 'Sélectionnez un stock' : null,
+                      ),
+                      if (_unitPrice != null) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Prix: $_unitPrice BIF/kg',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue),
+                          ),
+                        ),
+                      ],
+                      TextFormField(
+                        controller: _quantityController,
+                        decoration: const InputDecoration(
+                            labelText: 'Quantité à commander (kg)'),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Requis';
+                          final qty = double.tryParse(value);
+                          if (qty == null) return 'Nombre invalide';
+                          if (qty <= 0) return 'La quantité doit être positive';
+                          if (_availableQuantity != null &&
+                              qty > _availableQuantity!) {
+                            return 'Stock insuffisant ($_availableQuantity kg max)';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                TextFormField(
-                  controller: _varietyController,
-                  decoration: const InputDecoration(labelText: 'Variété'),
-                  validator: (value) =>
-                      value?.isEmpty == true ? 'Requis' : null,
-                ),
-                TextFormField(
-                  controller: _quantityController,
-                  decoration: const InputDecoration(labelText: 'Quantité'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) =>
-                      value?.isEmpty == true ? 'Requis' : null,
-                ),
-                TextFormField(
-                  controller: _priceController,
-                  decoration:
-                      const InputDecoration(labelText: 'Prix unitaire (BIF)'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) =>
-                      value?.isEmpty == true ? 'Requis' : null,
-                ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Annuler')),
         TextButton(
-          onPressed: _submitForm,
+          onPressed: _loadingStocks ? null : _submitForm,
           child: const Text('Créer'),
         ),
       ],
@@ -300,17 +376,15 @@ class _OrderFormDialogState extends State<OrderFormDialog> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      Fluttertoast.showToast(msg: "Création de la commande en cours...", backgroundColor: Colors.blue);
-      print('Submitting order form...');
+      Fluttertoast.showToast(
+          msg: 'Création de la commande en cours...',
+          backgroundColor: Colors.blue);
+
       final orderData = {
-        'buyer_name': _buyerController.text,
-        'variety': _varietyController.text,
-        'quantity': double.parse(_quantityController.text),
-        'price': int.parse(_priceController.text),
+        'stock': _selectedStockId,
+        'quantite': double.parse(_quantityController.text),
       };
 
-      print('Order data: $orderData');
-      
       context.read<OrderBloc>().add(CreateOrder(orderData));
       Navigator.pop(context);
     }

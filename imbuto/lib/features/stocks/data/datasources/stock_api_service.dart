@@ -110,8 +110,20 @@ class StockApiService {
 
   Future<Map<String, dynamic>> updateStock(
       int id, Map<String, dynamic> stockData) async {
-    final response = await _apiClient.dio.put('stock/$id/', data: stockData);
+    final response = await _apiClient.dio.patch('stock/$id/', data: stockData);
     return response.data;
+  }
+
+  Future<List<Map<String, dynamic>>> getStocksPublic() async {
+    try {
+      final response = await _apiClient.dio.get('stock/');
+      // On the backend, maybe there is a 'public' or similar endpoint,
+      // but for now we list all stocks and the user can pick from them.
+      return _parseResults(response.data);
+    } catch (e) {
+      print('Public Stocks API error: $e');
+      return [];
+    }
   }
 
   Future<void> deleteStock(int id) async {
