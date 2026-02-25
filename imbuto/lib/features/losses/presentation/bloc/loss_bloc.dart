@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/loss.dart';
@@ -10,13 +11,14 @@ abstract class LossEvent extends Equatable {
 }
 
 class LoadLosses extends LossEvent {}
+
 class AddLoss extends LossEvent {
   final int stockId;
   final int quantite;
   final String? details;
-  
+
   AddLoss({required this.stockId, required this.quantite, this.details});
-  
+
   @override
   List<Object?> get props => [stockId, quantite, details];
 }
@@ -27,13 +29,15 @@ abstract class LossState extends Equatable {
 }
 
 class LossInitial extends LossState {}
+
 class LossLoading extends LossState {}
+
 class LossLoaded extends LossState {
   final List<Loss> losses;
   final double totalLoss;
-  
+
   LossLoaded(this.losses, this.totalLoss);
-  
+
   @override
   List<Object?> get props => [losses, totalLoss];
 }
@@ -75,8 +79,9 @@ class LossBloc extends Bloc<LossEvent, LossState> {
                 createdAt: DateTime.parse(json['created_at']),
               ))
           .toList();
-      
-      final totalLoss = losses.fold(0.0, (sum, loss) => sum + loss.montantPerdu);
+
+      final totalLoss =
+          losses.fold(0.0, (sum, loss) => sum + loss.montantPerdu);
       emit(LossLoaded(losses, totalLoss));
     } catch (e) {
       emit(LossError('Erreur lors du chargement: ${e.toString()}'));
@@ -94,7 +99,17 @@ class LossBloc extends Bloc<LossEvent, LossState> {
       emit(LossOperationSuccess('Perte enregistrée avec succès'));
       add(LoadLosses());
     } catch (e) {
-      emit(LossError('Erreur lors de l\'enregistrement: ${e.toString()}'));
+      String errorMessage = 'Erreur lors de l\'enregistrement';
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('status')) {
+          errorMessage = data['status'];
+        } else if (e.response?.statusCode == 403) {
+          errorMessage =
+              'Accès refusé : vérifiez que votre compte et le lot de semences sont validés.';
+        }
+      }
+      emit(LossError(errorMessage));
     }
   }
 }

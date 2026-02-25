@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/plant.dart';
@@ -10,6 +11,7 @@ abstract class PlantEvent extends Equatable {
 }
 
 class LoadPlants extends PlantEvent {}
+
 class AddPlant extends PlantEvent {
   final String name;
   AddPlant(this.name);
@@ -30,7 +32,9 @@ abstract class PlantState extends Equatable {
 }
 
 class PlantInitial extends PlantState {}
+
 class PlantLoading extends PlantState {}
+
 class PlantLoaded extends PlantState {
   final List<Plant> plants;
   PlantLoaded(this.plants);
@@ -85,11 +89,26 @@ class PlantBloc extends Bloc<PlantEvent, PlantState> {
       emit(PlantOperationSuccess('Plante ajoutée avec succès'));
       add(LoadPlants());
     } catch (e) {
-      emit(PlantError('Erreur lors de l\'ajout: ${e.toString()}'));
+      String errorMessage = 'Erreur lors de l\'ajout';
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map) {
+          if (data.containsKey('status')) {
+            errorMessage = data['status'];
+          } else if (data.containsKey('name')) {
+            errorMessage = 'Cette plante existe déjà ou le nom est invalide.';
+          } else if (e.response?.statusCode == 403) {
+            errorMessage =
+                'Accès refusé : votre compte n\'est pas encore validé par l\'administrateur.';
+          }
+        }
+      }
+      emit(PlantError(errorMessage));
     }
   }
 
-  Future<void> _onDeletePlant(DeletePlant event, Emitter<PlantState> emit) async {
+  Future<void> _onDeletePlant(
+      DeletePlant event, Emitter<PlantState> emit) async {
     try {
       await _apiClient.dio.delete('plantes/${event.id}/');
       emit(PlantOperationSuccess('Plante supprimée avec succès'));
