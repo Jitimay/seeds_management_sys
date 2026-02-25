@@ -5,6 +5,8 @@ class Rating {
   final int etoiles;
   final String? commentaire;
   final DateTime createdAt;
+  final String? stockVariety;
+  final String? createdBy;
   
   Rating({
     required this.id,
@@ -13,6 +15,8 @@ class Rating {
     required this.etoiles,
     this.commentaire,
     required this.createdAt,
+    this.stockVariety,
+    this.createdBy,
   });
   
   factory Rating.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,8 @@ class Rating {
       etoiles: json['etoiles'],
       commentaire: json['commentaire'],
       createdAt: DateTime.parse(json['created_at']),
+      stockVariety: json['stock_variety'],
+      createdBy: json['created_by'],
     );
   }
 }
