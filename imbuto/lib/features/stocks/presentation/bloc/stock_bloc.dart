@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/stock.dart';
+import '../../domain/usecases/stock_usecases.dart';
 
 // Events
 abstract class StockEvent extends Equatable {
@@ -39,6 +40,7 @@ abstract class StockState extends Equatable {
 }
 
 class StockInitial extends StockState {}
+
 class StockLoading extends StockState {}
 
 class StockLoaded extends StockState {
@@ -64,7 +66,17 @@ class StockOperationSuccess extends StockState {
 
 // BLoC
 class StockBloc extends Bloc<StockEvent, StockState> {
-  StockBloc() : super(StockInitial()) {
+  final GetStocksUseCase getStocksUseCase;
+  final CreateStockUseCase createStockUseCase;
+  final UpdateStockUseCase updateStockUseCase;
+  final DeleteStockUseCase deleteStockUseCase;
+
+  StockBloc({
+    required this.getStocksUseCase,
+    required this.createStockUseCase,
+    required this.updateStockUseCase,
+    required this.deleteStockUseCase,
+  }) : super(StockInitial()) {
     on<LoadStocks>(_onLoadStocks);
     on<CreateStock>(_onCreateStock);
     on<UpdateStock>(_onUpdateStock);
@@ -74,8 +86,7 @@ class StockBloc extends Bloc<StockEvent, StockState> {
   Future<void> _onLoadStocks(LoadStocks event, Emitter<StockState> emit) async {
     emit(StockLoading());
     try {
-      // TODO: Implement API call
-      final stocks = <Stock>[];
+      final stocks = await getStocksUseCase();
       emit(StockLoaded(stocks));
     } catch (e) {
       emit(StockError(e.toString()));
@@ -85,18 +96,21 @@ class StockBloc extends Bloc<StockEvent, StockState> {
   Future<void> _onCreateStock(CreateStock event, Emitter<StockState> emit) async {
     emit(StockLoading());
     try {
-      // TODO: Implement API call
+      print('Creating stock with data: ${event.stockData}');
+      await createStockUseCase(event.stockData);
       emit(StockOperationSuccess('Stock créé avec succès'));
       add(LoadStocks());
     } catch (e) {
-      emit(StockError(e.toString()));
+      print('Error creating stock: $e');
+      emit(StockError('Erreur lors de la création: ${e.toString()}'));
     }
   }
 
-  Future<void> _onUpdateStock(UpdateStock event, Emitter<StockState> emit) async {
+  Future<void> _onUpdateStock(
+      UpdateStock event, Emitter<StockState> emit) async {
     emit(StockLoading());
     try {
-      // TODO: Implement API call
+      await updateStockUseCase(event.id, event.stockData);
       emit(StockOperationSuccess('Stock mis à jour'));
       add(LoadStocks());
     } catch (e) {
@@ -104,10 +118,11 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     }
   }
 
-  Future<void> _onDeleteStock(DeleteStock event, Emitter<StockState> emit) async {
+  Future<void> _onDeleteStock(
+      DeleteStock event, Emitter<StockState> emit) async {
     emit(StockLoading());
     try {
-      // TODO: Implement API call
+      await deleteStockUseCase(event.id);
       emit(StockOperationSuccess('Stock supprimé'));
       add(LoadStocks());
     } catch (e) {

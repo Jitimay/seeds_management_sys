@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:imbuto/core/constants/app_constants.dart';
 import 'package:imbuto/core/storage/storage_service.dart';
+import 'package:imbuto/core/network/api_client.dart';
+import 'package:imbuto/shared/services/service_locator.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
@@ -32,6 +34,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final userDataStr = StorageService.getString(AppConstants.userKey);
 
       if (token != null && userDataStr != null) {
+        // Set token in API client
+        ServiceLocator.get<ApiClient>().setAuthToken(token);
         emit(AuthAuthenticated(user: {}, token: token));
       } else {
         emit(AuthUnauthenticated());
@@ -49,7 +53,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     try {
       final result = await loginUseCase(event.username, event.password);
-      emit(AuthAuthenticated(user: result, token: result['access'] ?? ''));
+      final token = result['access'] ?? '';
+      
+      // Set token in API client
+      ServiceLocator.get<ApiClient>().setAuthToken(token);
+      
+      emit(AuthAuthenticated(user: result, token: token));
     } catch (e) {
       emit(AuthError(message: e.toString()));
     }
@@ -73,6 +82,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     LogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
+    // Clear token from API client
+    ServiceLocator.get<ApiClient>().clearAuthToken();
+    
     await StorageService.clear();
     await StorageService.clearSecure();
     emit(AuthUnauthenticated());

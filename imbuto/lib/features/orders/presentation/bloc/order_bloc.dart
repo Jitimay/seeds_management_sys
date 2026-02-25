@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/order.dart';
+import '../../domain/usecases/order_usecases.dart';
 
 // Events
 abstract class OrderEvent extends Equatable {
@@ -64,7 +65,15 @@ class OrderOperationSuccess extends OrderState {
 
 // BLoC
 class OrderBloc extends Bloc<OrderEvent, OrderState> {
-  OrderBloc() : super(OrderInitial()) {
+  final GetOrdersUseCase getOrdersUseCase;
+  final CreateOrderUseCase createOrderUseCase;
+  final UpdateOrderUseCase updateOrderUseCase;
+
+  OrderBloc({
+    required this.getOrdersUseCase,
+    required this.createOrderUseCase,
+    required this.updateOrderUseCase,
+  }) : super(OrderInitial()) {
     on<LoadOrders>(_onLoadOrders);
     on<CreateOrder>(_onCreateOrder);
     on<MarkOrderDelivered>(_onMarkOrderDelivered);
@@ -74,8 +83,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   Future<void> _onLoadOrders(LoadOrders event, Emitter<OrderState> emit) async {
     emit(OrderLoading());
     try {
-      // TODO: Implement API call
-      final orders = <Order>[];
+      final orders = await getOrdersUseCase();
       emit(OrderLoaded(orders));
     } catch (e) {
       emit(OrderError(e.toString()));
@@ -85,17 +93,19 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   Future<void> _onCreateOrder(CreateOrder event, Emitter<OrderState> emit) async {
     emit(OrderLoading());
     try {
-      // TODO: Implement API call
+      print('Creating order with data: ${event.orderData}');
+      await createOrderUseCase(event.orderData);
       emit(OrderOperationSuccess('Commande créée avec succès'));
       add(LoadOrders());
     } catch (e) {
-      emit(OrderError(e.toString()));
+      print('Error creating order: $e');
+      emit(OrderError('Erreur lors de la création: ${e.toString()}'));
     }
   }
 
   Future<void> _onMarkOrderDelivered(MarkOrderDelivered event, Emitter<OrderState> emit) async {
     try {
-      // TODO: Implement API call
+      await updateOrderUseCase(event.orderId, {'is_delivered': true});
       emit(OrderOperationSuccess('Commande marquée comme livrée'));
       add(LoadOrders());
     } catch (e) {
@@ -105,7 +115,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
 
   Future<void> _onUpdatePayment(UpdatePayment event, Emitter<OrderState> emit) async {
     try {
-      // TODO: Implement API call
+      await updateOrderUseCase(event.orderId, {'montant_paye': event.amount});
       emit(OrderOperationSuccess('Paiement mis à jour'));
       add(LoadOrders());
     } catch (e) {

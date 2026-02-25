@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import '../../../../shared/services/service_locator.dart';
 import '../bloc/stock_bloc.dart';
 import '../../domain/entities/stock.dart';
 
@@ -10,7 +10,7 @@ class StocksListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => StockBloc()..add(LoadStocks()),
+      create: (context) => ServiceLocator.get<StockBloc>()..add(LoadStocks()),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Mes Stocks'),
@@ -25,11 +25,14 @@ class StocksListPage extends StatelessWidget {
           listener: (context, state) {
             if (state is StockError) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                SnackBar(
+                    content: Text(state.message), backgroundColor: Colors.red),
               );
             } else if (state is StockOperationSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.green),
+                SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.green),
               );
             }
           },
@@ -42,9 +45,11 @@ class StocksListPage extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+                      Icon(Icons.inventory_2_outlined,
+                          size: 64, color: Colors.grey),
                       SizedBox(height: 16),
-                      Text('Aucun stock disponible', style: TextStyle(fontSize: 18)),
+                      Text('Aucun stock disponible',
+                          style: TextStyle(fontSize: 18)),
                       Text('Appuyez sur + pour ajouter un stock'),
                     ],
                   ),
@@ -53,7 +58,8 @@ class StocksListPage extends StatelessWidget {
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: state.stocks.length,
-                itemBuilder: (context, index) => _buildStockCard(context, state.stocks[index]),
+                itemBuilder: (context, index) =>
+                    _buildStockCard(context, state.stocks[index]),
               );
             }
             return const SizedBox();
@@ -78,15 +84,19 @@ class StocksListPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(stock.varietyName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text('${stock.plantName} - ${stock.category}', style: TextStyle(color: Colors.grey[600])),
+                      Text(stock.varietyName,
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text('${stock.plantName} - ${stock.category}',
+                          style: TextStyle(color: Colors.grey[600])),
                     ],
                   ),
                 ),
                 PopupMenuButton(
                   itemBuilder: (context) => [
                     const PopupMenuItem(value: 'edit', child: Text('Modifier')),
-                    const PopupMenuItem(value: 'delete', child: Text('Supprimer')),
+                    const PopupMenuItem(
+                        value: 'delete', child: Text('Supprimer')),
                   ],
                   onSelected: (value) {
                     if (value == 'edit') _showEditStockDialog(context, stock);
@@ -105,12 +115,14 @@ class StocksListPage extends StatelessWidget {
                       Text('Quantité: ${stock.qteRestante}/${stock.qteTotal}'),
                       Text('Prix: ${stock.prixVenteUnitaire} BIF'),
                       if (stock.dateExpiration != null)
-                        Text('Expire: ${stock.dateExpiration!.day}/${stock.dateExpiration!.month}/${stock.dateExpiration!.year}'),
+                        Text(
+                            'Expire: ${stock.dateExpiration!.day}/${stock.dateExpiration!.month}/${stock.dateExpiration!.year}'),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: stock.isValidated ? Colors.green : Colors.orange,
                     borderRadius: BorderRadius.circular(12),
@@ -149,7 +161,9 @@ class StocksListPage extends StatelessWidget {
         title: const Text('Confirmer la suppression'),
         content: const Text('Êtes-vous sûr de vouloir supprimer ce stock ?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annuler')),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -192,41 +206,56 @@ class _StockFormDialogState extends State<StockFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.stock == null ? 'Ajouter un stock' : 'Modifier le stock'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<String>(
-              value: _selectedCategory,
-              items: ['Pré_Bases', 'Base', 'Certifiés'].map((cat) => 
-                DropdownMenuItem(value: cat, child: Text(cat))).toList(),
-              onChanged: (value) => setState(() => _selectedCategory = value!),
-              decoration: const InputDecoration(labelText: 'Catégorie'),
+      title:
+          Text(widget.stock == null ? 'Ajouter un stock' : 'Modifier le stock'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  items: ['Pré_Bases', 'Base', 'Certifiés']
+                      .map((cat) =>
+                          DropdownMenuItem(value: cat, child: Text(cat)))
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => _selectedCategory = value!),
+                  decoration: const InputDecoration(labelText: 'Catégorie'),
+                ),
+                TextFormField(
+                  controller: _varietyController,
+                  decoration: const InputDecoration(labelText: 'Variété'),
+                  validator: (value) =>
+                      value?.isEmpty == true ? 'Requis' : null,
+                ),
+                TextFormField(
+                  controller: _quantityController,
+                  decoration: const InputDecoration(labelText: 'Quantité'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value?.isEmpty == true ? 'Requis' : null,
+                ),
+                TextFormField(
+                  controller: _priceController,
+                  decoration:
+                      const InputDecoration(labelText: 'Prix unitaire (BIF)'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value?.isEmpty == true ? 'Requis' : null,
+                ),
+              ],
             ),
-            TextFormField(
-              controller: _varietyController,
-              decoration: const InputDecoration(labelText: 'Variété'),
-              validator: (value) => value?.isEmpty == true ? 'Requis' : null,
-            ),
-            TextFormField(
-              controller: _quantityController,
-              decoration: const InputDecoration(labelText: 'Quantité'),
-              keyboardType: TextInputType.number,
-              validator: (value) => value?.isEmpty == true ? 'Requis' : null,
-            ),
-            TextFormField(
-              controller: _priceController,
-              decoration: const InputDecoration(labelText: 'Prix unitaire (BIF)'),
-              keyboardType: TextInputType.number,
-              validator: (value) => value?.isEmpty == true ? 'Requis' : null,
-            ),
-          ],
+          ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler')),
         TextButton(
           onPressed: _submitForm,
           child: Text(widget.stock == null ? 'Ajouter' : 'Modifier'),

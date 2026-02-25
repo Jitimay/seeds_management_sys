@@ -38,7 +38,7 @@ class ProfilePage extends StatelessWidget {
                             radius: 50,
                             backgroundColor: Theme.of(context).primaryColor,
                             child: Text(
-                              '${(state.user['first_name'] ?? '')[0] ?? ''}${(state.user['last_name'] ?? '')[0] ?? ''}',
+                              '${(state.user['first_name'] != null && state.user['first_name'].isNotEmpty ? state.user['first_name'][0] : '')}${(state.user['last_name'] != null && state.user['last_name'].isNotEmpty ? state.user['last_name'][0] : '')}',
                               style: const TextStyle(
                                 fontSize: 32,
                                 color: Colors.white,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../shared/services/service_locator.dart';
 import '../bloc/order_bloc.dart';
 import '../../domain/entities/order.dart';
 
@@ -9,7 +10,7 @@ class OrdersListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => OrderBloc()..add(LoadOrders()),
+      create: (context) => ServiceLocator.get<OrderBloc>()..add(LoadOrders()),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Mes Commandes'),
@@ -24,11 +25,14 @@ class OrdersListPage extends StatelessWidget {
           listener: (context, state) {
             if (state is OrderError) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                SnackBar(
+                    content: Text(state.message), backgroundColor: Colors.red),
               );
             } else if (state is OrderOperationSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.green),
+                SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.green),
               );
             }
           },
@@ -41,7 +45,8 @@ class OrdersListPage extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
+                      Icon(Icons.shopping_cart_outlined,
+                          size: 64, color: Colors.grey),
                       SizedBox(height: 16),
                       Text('Aucune commande', style: TextStyle(fontSize: 18)),
                       Text('Appuyez sur + pour créer une commande'),
@@ -52,7 +57,8 @@ class OrdersListPage extends StatelessWidget {
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: state.orders.length,
-                itemBuilder: (context, index) => _buildOrderCard(context, state.orders[index]),
+                itemBuilder: (context, index) =>
+                    _buildOrderCard(context, state.orders[index]),
               );
             }
             return const SizedBox();
@@ -64,7 +70,7 @@ class OrdersListPage extends StatelessWidget {
 
   Widget _buildOrderCard(BuildContext context, Order order) {
     final paymentProgress = order.montantPaye / order.montantTotal;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -79,20 +85,30 @@ class OrdersListPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Commande #${order.id}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text('${order.stockVariety} (${order.stockCategory})', style: TextStyle(color: Colors.grey[600])),
-                      Text('Acheteur: ${order.buyerName}', style: TextStyle(color: Colors.grey[600])),
+                      Text('Commande #${order.id}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text('${order.stockVariety} (${order.stockCategory})',
+                          style: TextStyle(color: Colors.grey[600])),
+                      Text('Acheteur: ${order.buyerName}',
+                          style: TextStyle(color: Colors.grey[600])),
                     ],
                   ),
                 ),
                 PopupMenuButton(
                   itemBuilder: (context) => [
-                    if (!order.isDelivered) const PopupMenuItem(value: 'deliver', child: Text('Marquer livré')),
-                    const PopupMenuItem(value: 'payment', child: Text('Mettre à jour paiement')),
+                    if (!order.isDelivered)
+                      const PopupMenuItem(
+                          value: 'deliver', child: Text('Marquer livré')),
+                    const PopupMenuItem(
+                        value: 'payment',
+                        child: Text('Mettre à jour paiement')),
                   ],
                   onSelected: (value) {
                     if (value == 'deliver') {
-                      context.read<OrderBloc>().add(MarkOrderDelivered(order.id));
+                      context
+                          .read<OrderBloc>()
+                          .add(MarkOrderDelivered(order.id));
                     } else if (value == 'payment') {
                       _showPaymentDialog(context, order);
                     }
@@ -117,14 +133,16 @@ class OrdersListPage extends StatelessWidget {
                 Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: order.isDelivered ? Colors.green : Colors.orange,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         order.isDelivered ? 'Livré' : 'En cours',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -138,7 +156,8 @@ class OrdersListPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Text('${(paymentProgress * 100).toInt()}%', style: const TextStyle(fontSize: 10)),
+                    Text('${(paymentProgress * 100).toInt()}%',
+                        style: const TextStyle(fontSize: 10)),
                   ],
                 ),
               ],
@@ -187,7 +206,9 @@ class OrdersListPage extends StatelessWidget {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annuler')),
           TextButton(
             onPressed: () {
               final amount = int.tryParse(controller.text) ?? 0;
@@ -222,38 +243,51 @@ class _OrderFormDialogState extends State<OrderFormDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Nouvelle Commande'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _buyerController,
-              decoration: const InputDecoration(labelText: 'Nom de l\'acheteur'),
-              validator: (value) => value?.isEmpty == true ? 'Requis' : null,
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _buyerController,
+                  decoration:
+                      const InputDecoration(labelText: 'Nom de l\'acheteur'),
+                  validator: (value) =>
+                      value?.isEmpty == true ? 'Requis' : null,
+                ),
+                TextFormField(
+                  controller: _varietyController,
+                  decoration: const InputDecoration(labelText: 'Variété'),
+                  validator: (value) =>
+                      value?.isEmpty == true ? 'Requis' : null,
+                ),
+                TextFormField(
+                  controller: _quantityController,
+                  decoration: const InputDecoration(labelText: 'Quantité'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value?.isEmpty == true ? 'Requis' : null,
+                ),
+                TextFormField(
+                  controller: _priceController,
+                  decoration:
+                      const InputDecoration(labelText: 'Prix unitaire (BIF)'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value?.isEmpty == true ? 'Requis' : null,
+                ),
+              ],
             ),
-            TextFormField(
-              controller: _varietyController,
-              decoration: const InputDecoration(labelText: 'Variété'),
-              validator: (value) => value?.isEmpty == true ? 'Requis' : null,
-            ),
-            TextFormField(
-              controller: _quantityController,
-              decoration: const InputDecoration(labelText: 'Quantité'),
-              keyboardType: TextInputType.number,
-              validator: (value) => value?.isEmpty == true ? 'Requis' : null,
-            ),
-            TextFormField(
-              controller: _priceController,
-              decoration: const InputDecoration(labelText: 'Prix unitaire (BIF)'),
-              keyboardType: TextInputType.number,
-              validator: (value) => value?.isEmpty == true ? 'Requis' : null,
-            ),
-          ],
+          ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler')),
         TextButton(
           onPressed: _submitForm,
           child: const Text('Créer'),

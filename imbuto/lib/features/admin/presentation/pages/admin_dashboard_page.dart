@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../shared/services/service_locator.dart';
+import '../../domain/entities/admin_validation.dart';
 import '../bloc/admin_bloc.dart';
+import '../../../../core/network/api_client.dart'; // Added this import
 
 class AdminDashboardPage extends StatelessWidget {
   const AdminDashboardPage({super.key});
@@ -8,7 +11,8 @@ class AdminDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => AdminBloc()..add(LoadPendingValidations()),
+      create: (context) =>
+          ServiceLocator.get<AdminBloc>()..add(LoadPendingValidations()),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Administration'),
@@ -25,7 +29,14 @@ class AdminDashboardPage extends StatelessWidget {
           listener: (context, state) {
             if (state is AdminError) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                SnackBar(
+                    content: Text(state.message), backgroundColor: Colors.red),
+              );
+            } else if (state is AdminOperationSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.green),
               );
             }
           },
@@ -48,10 +59,9 @@ class AdminDashboardPage extends StatelessWidget {
                             icon: Icons.people,
                             color: Colors.blue,
                             onTap: () => _showValidationList(
-                              context, 
-                              'Multiplicateurs en attente', 
-                              state.pendingMultiplicators
-                            ),
+                                context,
+                                'Multiplicateurs en attente',
+                                state.pendingMultiplicators),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -61,11 +71,8 @@ class AdminDashboardPage extends StatelessWidget {
                             count: state.pendingStocks.length,
                             icon: Icons.inventory,
                             color: Colors.green,
-                            onTap: () => _showValidationList(
-                              context, 
-                              'Stocks en attente', 
-                              state.pendingStocks
-                            ),
+                            onTap: () => _showValidationList(context,
+                                'Stocks en attente', state.pendingStocks),
                           ),
                         ),
                       ],
@@ -79,11 +86,8 @@ class AdminDashboardPage extends StatelessWidget {
                             count: state.pendingRoles.length,
                             icon: Icons.admin_panel_settings,
                             color: Colors.orange,
-                            onTap: () => _showValidationList(
-                              context, 
-                              'Rôles en attente', 
-                              state.pendingRoles
-                            ),
+                            onTap: () => _showValidationList(context,
+                                'Rôles en attente', state.pendingRoles),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -91,14 +95,15 @@ class AdminDashboardPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    
-                    if (state.pendingMultiplicators.isEmpty && 
-                        state.pendingStocks.isEmpty && 
+
+                    if (state.pendingMultiplicators.isEmpty &&
+                        state.pendingStocks.isEmpty &&
                         state.pendingRoles.isEmpty)
                       const Center(
                         child: Column(
                           children: [
-                            Icon(Icons.check_circle, size: 64, color: Colors.green),
+                            Icon(Icons.check_circle,
+                                size: 64, color: Colors.green),
                             SizedBox(height: 16),
                             Text('Aucune validation en attente'),
                             Text('Toutes les demandes ont été traitées'),
@@ -145,10 +150,7 @@ class AdminDashboardPage extends StatelessWidget {
   }
 
   void _showValidationList(
-    BuildContext context, 
-    String title, 
-    List<PendingValidation> items
-  ) {
+      BuildContext context, String title, List<PendingValidation> items) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -175,9 +177,25 @@ class AdminDashboardPage extends StatelessWidget {
                       child: ListTile(
                         title: Text(item.title),
                         subtitle: Text(item.subtitle),
-                        trailing: Text(
-                          '${item.createdAt.day}/${item.createdAt.month}',
-                          style: Theme.of(context).textTheme.bodySmall,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${item.createdAt.day}/${item.createdAt.month}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.check_circle_outline,
+                                  color: Colors.green),
+                              onPressed: () {
+                                Navigator.pop(context); // Close bottom sheet
+                                context
+                                    .read<AdminBloc>()
+                                    .add(ValidateItem(item.id, item.type));
+                              },
+                            ),
+                          ],
                         ),
                         onTap: () {
                           // TODO: Show detailed view
@@ -224,9 +242,9 @@ class _SummaryCard extends StatelessWidget {
               Text(
                 count.toString(),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               Text(title, style: Theme.of(context).textTheme.bodyMedium),
             ],
