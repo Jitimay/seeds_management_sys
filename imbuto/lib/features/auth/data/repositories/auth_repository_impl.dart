@@ -18,7 +18,7 @@ class AuthRepositoryImpl implements AuthRepository {
     print('Endpoint: ${apiClient.dio.options.baseUrl}login/');
 
     try {
-      final response = await apiClient.dio.post('auth/token/', data: {
+      final response = await apiClient.dio.post('login/', data: {
         'username': username,
         'password': password,
       });

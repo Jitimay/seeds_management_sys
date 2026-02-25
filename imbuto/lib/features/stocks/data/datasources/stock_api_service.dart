@@ -85,6 +85,16 @@ class StockApiService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getVarieties() async {
+    try {
+      final response = await _apiClient.dio.get('variete/');
+      return _parseResults(response.data);
+    } catch (e) {
+      print('Varieties API error: $e');
+      return [];
+    }
+  }
+
   Future<Map<String, dynamic>> createStock(
       Map<String, dynamic> stockData) async {
     print('API: Creating stock with data: $stockData');

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:imbuto/features/stocks/data/datasources/stock_api_service.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../bloc/stock_bloc.dart';
 import '../../domain/entities/stock.dart';
@@ -207,20 +208,51 @@ class StockFormDialog extends StatefulWidget {
 
 class _StockFormDialogState extends State<StockFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _varietyController = TextEditingController();
   final _quantityController = TextEditingController();
   final _priceController = TextEditingController();
-  String _selectedCategory = 'Base';
+  String _selectedCategory = 'Pré_Bases';
+
+  List<Map<String, dynamic>> _varieties = [];
+  int? _selectedVarietyId;
+  bool _loadingVarieties = true;
 
   @override
   void initState() {
     super.initState();
+    _loadVarieties();
     if (widget.stock != null) {
-      _varietyController.text = widget.stock!.varietyName;
       _quantityController.text = widget.stock!.qteTotal.toString();
       _priceController.text = widget.stock!.prixVenteUnitaire.toString();
       _selectedCategory = widget.stock!.category;
     }
+  }
+
+  Future<void> _loadVarieties() async {
+    try {
+      final apiService = ServiceLocator.get<StockApiService>();
+      final varieties = await apiService.getVarieties();
+      if (mounted) {
+        setState(() {
+          _varieties = varieties;
+          if (widget.stock != null && varieties.isNotEmpty) {
+            // Try to pre-select the variety of the stock being edited
+            final match =
+                varieties.where((v) => v['nom'] == widget.stock!.varietyName);
+            if (match.isNotEmpty) _selectedVarietyId = match.first['id'];
+          }
+          _loadingVarieties = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loadingVarieties = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _priceController.dispose();
+    super.dispose();
   }
 
   @override
@@ -230,54 +262,72 @@ class _StockFormDialogState extends State<StockFormDialog> {
           Text(widget.stock == null ? 'Ajouter un stock' : 'Modifier le stock'),
       content: SizedBox(
         width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  value: _selectedCategory,
-                  items: ['Pré_Bases', 'Base', 'Certifiés']
-                      .map((cat) =>
-                          DropdownMenuItem(value: cat, child: Text(cat)))
-                      .toList(),
-                  onChanged: (value) =>
-                      setState(() => _selectedCategory = value!),
-                  decoration: const InputDecoration(labelText: 'Catégorie'),
+        child: _loadingVarieties
+            ? const SizedBox(
+                height: 100, child: Center(child: CircularProgressIndicator()))
+            : SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        value: _selectedCategory,
+                        items: ['Pré_Bases', 'Base', 'Certifiés']
+                            .map((cat) =>
+                                DropdownMenuItem(value: cat, child: Text(cat)))
+                            .toList(),
+                        onChanged: (value) =>
+                            setState(() => _selectedCategory = value!),
+                        decoration:
+                            const InputDecoration(labelText: 'Catégorie'),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<int>(
+                        value: _selectedVarietyId,
+                        isExpanded: true,
+                        items: _varieties
+                            .map((v) => DropdownMenuItem<int>(
+                                  value: v['id'] as int,
+                                  child: Text(
+                                    '${v['nom'] ?? 'Inconnu'} (${v['plant_name'] ?? ''})',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (value) =>
+                            setState(() => _selectedVarietyId = value),
+                        decoration: const InputDecoration(labelText: 'Variété'),
+                        validator: (value) =>
+                            value == null ? 'Sélectionnez une variété' : null,
+                      ),
+                      TextFormField(
+                        controller: _quantityController,
+                        decoration:
+                            const InputDecoration(labelText: 'Quantité'),
+                        keyboardType: TextInputType.number,
+                        validator: (value) =>
+                            value?.isEmpty == true ? 'Requis' : null,
+                      ),
+                      TextFormField(
+                        controller: _priceController,
+                        decoration: const InputDecoration(
+                            labelText: 'Prix unitaire (BIF)'),
+                        keyboardType: TextInputType.number,
+                        validator: (value) =>
+                            value?.isEmpty == true ? 'Requis' : null,
+                      ),
+                    ],
+                  ),
                 ),
-                TextFormField(
-                  controller: _varietyController,
-                  decoration: const InputDecoration(labelText: 'Variété'),
-                  validator: (value) =>
-                      value?.isEmpty == true ? 'Requis' : null,
-                ),
-                TextFormField(
-                  controller: _quantityController,
-                  decoration: const InputDecoration(labelText: 'Quantité'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) =>
-                      value?.isEmpty == true ? 'Requis' : null,
-                ),
-                TextFormField(
-                  controller: _priceController,
-                  decoration:
-                      const InputDecoration(labelText: 'Prix unitaire (BIF)'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) =>
-                      value?.isEmpty == true ? 'Requis' : null,
-                ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Annuler')),
         TextButton(
-          onPressed: _submitForm,
+          onPressed: _loadingVarieties ? null : _submitForm,
           child: Text(widget.stock == null ? 'Ajouter' : 'Modifier'),
         ),
       ],
@@ -287,11 +337,11 @@ class _StockFormDialogState extends State<StockFormDialog> {
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       Fluttertoast.showToast(
-          msg: "Création du stock en cours...", backgroundColor: Colors.blue);
+          msg: 'Création du stock en cours...', backgroundColor: Colors.blue);
       print('Submitting stock form...');
       final stockData = {
         'category': _selectedCategory,
-        'variety_name': _varietyController.text,
+        'variety': _selectedVarietyId,
         'qte_totale': double.parse(_quantityController.text),
         'prix_vente_unitaire': int.parse(_priceController.text),
       };
