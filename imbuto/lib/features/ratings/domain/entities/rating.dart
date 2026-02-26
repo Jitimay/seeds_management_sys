@@ -7,7 +7,7 @@ class Rating {
   final DateTime createdAt;
   final String? stockVariety;
   final String? createdBy;
-  
+
   Rating({
     required this.id,
     required this.stockId,
@@ -18,17 +18,35 @@ class Rating {
     this.stockVariety,
     this.createdBy,
   });
-  
+
   factory Rating.fromJson(Map<String, dynamic> json) {
     return Rating(
-      id: json['id'],
-      stockId: json['stock'],
-      commandeId: json['commande'],
-      etoiles: json['etoiles'],
+      id: json['id'] ?? 0,
+      stockId: json['stock'] is int
+          ? json['stock']
+          : (int.tryParse(json['stock'].toString()) ?? 0),
+      commandeId: json['commande'] is int
+          ? json['commande']
+          : (int.tryParse(json['commande'].toString()) ?? 0),
+      etoiles: json['etoiles'] ?? 0,
       commentaire: json['commentaire'],
-      createdAt: DateTime.parse(json['created_at']),
-      stockVariety: json['stock_variety'],
-      createdBy: json['created_by'],
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      stockVariety: json['stock_variety']?.toString(),
+      createdBy: _parseCreatedBy(json['created_by']),
     );
+  }
+
+  static String? _parseCreatedBy(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value;
+    if (value is Map) {
+      return value['username'] ??
+          value['name'] ??
+          value['first_name'] ??
+          value.toString();
+    }
+    return value.toString();
   }
 }

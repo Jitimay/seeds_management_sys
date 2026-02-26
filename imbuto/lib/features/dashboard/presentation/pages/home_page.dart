@@ -361,12 +361,15 @@ class _HomePageState extends State<HomePage>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Avis et évaluations',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
+            const Expanded(
+              child: Text(
+                'Avis et évaluations',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
             TextButton(
@@ -454,24 +457,30 @@ class _HomePageState extends State<HomePage>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: Colors.green.withOpacity(0.1),
-                    child:
-                        const Icon(Icons.person, size: 14, color: Colors.green),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    rating.createdBy ?? 'Utilisateur',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+              Expanded(
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Colors.green.withOpacity(0.1),
+                      child: const Icon(Icons.person,
+                          size: 14, color: Colors.green),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        rating.createdBy ?? 'Utilisateur',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               RatingStars(
                 rating: rating.etoiles.toDouble(),
                 size: 14,

@@ -21,14 +21,14 @@ class AddRating extends RatingEvent {
   final int commandeId;
   final int etoiles;
   final String? commentaire;
-  
+
   AddRating({
     required this.stockId,
     required this.commandeId,
     required this.etoiles,
     this.commentaire,
   });
-  
+
   @override
   List<Object?> get props => [stockId, commandeId, etoiles, commentaire];
 }
@@ -39,13 +39,15 @@ abstract class RatingState extends Equatable {
 }
 
 class RatingInitial extends RatingState {}
+
 class RatingLoading extends RatingState {}
+
 class RatingLoaded extends RatingState {
   final List<Rating> ratings;
   final double averageRating;
-  
+
   RatingLoaded(this.ratings, this.averageRating);
-  
+
   @override
   List<Object?> get props => [ratings, averageRating];
 }
@@ -72,32 +74,25 @@ class RatingBloc extends Bloc<RatingEvent, RatingState> {
     on<AddRating>(_onAddRating);
   }
 
-  Future<void> _onLoadRatings(LoadRatings event, Emitter<RatingState> emit) async {
+  Future<void> _onLoadRatings(
+      LoadRatings event, Emitter<RatingState> emit) async {
     emit(RatingLoading());
     try {
       String url = 'note/';
       if (event.stockId != null) {
         url += '?stock=${event.stockId}';
       }
-      
+
       final response = await _apiClient.dio.get(url);
       final ratings = (response.data['results'] as List)
-          .map((json) => Rating(
-                id: json['id'],
-                stockId: json['stock'],
-                commandeId: json['commande'],
-                stockVariety: json['stock_variety'] ?? 'N/A',
-                etoiles: json['etoiles'],
-                commentaire: json['commentaire'],
-                createdAt: DateTime.parse(json['created_at']),
-                createdBy: json['created_by'] ?? 'N/A',
-              ))
+          .map((json) => Rating.fromJson(json))
           .toList();
-      
-      final averageRating = ratings.isEmpty 
-          ? 0.0 
-          : ratings.fold(0.0, (sum, rating) => sum + rating.etoiles) / ratings.length;
-      
+
+      final averageRating = ratings.isEmpty
+          ? 0.0
+          : ratings.fold(0.0, (sum, rating) => sum + rating.etoiles) /
+              ratings.length;
+
       emit(RatingLoaded(ratings, averageRating));
     } catch (e) {
       emit(RatingError('Erreur lors du chargement: ${e.toString()}'));

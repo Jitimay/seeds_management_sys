@@ -1,5 +1,9 @@
 import 'package:get_it/get_it.dart';
 import 'package:imbuto/core/services/api_service.dart';
+import 'package:imbuto/features/orders/data/datasources/order_api_service.dart';
+import 'package:imbuto/features/orders/data/repositories/order_repository_impl.dart';
+import 'package:imbuto/features/orders/domain/repositories/order_repository.dart';
+import 'package:imbuto/features/orders/domain/usecases/order_usecases.dart';
 import '../../core/network/api_client.dart';
 import '../../core/constants/app_constants.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
