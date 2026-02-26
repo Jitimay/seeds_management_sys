@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:imbuto/core/constants/app_constants.dart';
 import 'package:imbuto/core/network/api_client.dart';
@@ -31,7 +32,8 @@ class AuthRepositoryImpl implements AuthRepository {
           AppConstants.tokenKey, data['access']);
       await StorageService.setSecureString(
           AppConstants.refreshTokenKey, data['refresh']);
-      await StorageService.setString(AppConstants.userKey, data.toString());
+      // Using jsonEncode to ensure it's a valid JSON string for later decoding
+      await StorageService.setString(AppConstants.userKey, jsonEncode(data));
 
       return data;
     } catch (e) {

@@ -81,7 +81,7 @@ class ServiceLocator {
     sl.registerLazySingleton(() => AdminRemoteDataSource(apiClient: sl()));
 
     // BLoCs
-    sl.registerFactory(() => AuthBloc(
+    sl.registerLazySingleton(() => AuthBloc(
           loginUseCase: sl(),
           registerUseCase: sl(),
         ));

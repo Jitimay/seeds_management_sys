@@ -43,7 +43,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthAuthenticated(user: userData, token: token));
         } catch (e) {
           print('Error decoding user data: $e');
-          emit(AuthAuthenticated(user: {}, token: token));
+          // Try to fix the broken data if possible, or just treat as unauthenticated
+          if (userDataStr.startsWith('{')) {
+            // It looks like a map but might have single quotes from toString()
+            // This is a last resort fallback for old format data
+            emit(AuthAuthenticated(user: {}, token: token));
+          } else {
+            emit(AuthUnauthenticated());
+          }
         }
       } else {
         emit(AuthUnauthenticated());
