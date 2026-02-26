@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:imbuto/core/constants/app_constants.dart';
 import 'package:imbuto/core/storage/storage_service.dart';
@@ -36,7 +37,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (token != null && userDataStr != null) {
         // Set token in API client
         ServiceLocator.get<ApiClient>().setAuthToken(token);
-        emit(AuthAuthenticated(user: {}, token: token));
+
+        try {
+          final userData = jsonDecode(userDataStr);
+          emit(AuthAuthenticated(user: userData, token: token));
+        } catch (e) {
+          print('Error decoding user data: $e');
+          emit(AuthAuthenticated(user: {}, token: token));
+        }
       } else {
         emit(AuthUnauthenticated());
       }
@@ -55,19 +63,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final result = await loginUseCase(event.username, event.password);
       final token = result['access'] ?? '';
       final refreshToken = result['refresh'] ?? '';
-      
+
       // Store both tokens securely
       await StorageService.setSecureString(AppConstants.tokenKey, token);
-      await StorageService.setSecureString(AppConstants.refreshTokenKey, refreshToken);
-      await StorageService.setString(AppConstants.userKey, result.toString());
-      
+      await StorageService.setSecureString(
+          AppConstants.refreshTokenKey, refreshToken);
+      await StorageService.setString(AppConstants.userKey, jsonEncode(result));
+
       // Set token in API client
       ServiceLocator.get<ApiClient>().setAuthToken(token);
-      
+
       print('Login successful, token set: ${token.substring(0, 20)}...');
       print('Refresh token stored: ${refreshToken.substring(0, 20)}...');
       print('User data: $result');
-      
+
       emit(AuthAuthenticated(user: result, token: token));
     } catch (e) {
       print('Login error: $e');
@@ -95,7 +104,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     // Clear token from API client
     ServiceLocator.get<ApiClient>().clearAuthToken();
-    
+
     await StorageService.clear();
     await StorageService.clearSecure();
     emit(AuthUnauthenticated());

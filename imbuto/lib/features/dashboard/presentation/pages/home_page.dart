@@ -98,6 +98,14 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildWelcomeSection(Map<String, dynamic> user) {
     final bool isValidated = user['is_validated'] ?? false;
+    final String? types = user['types']; // multiplicateurs / cultivateurs
+    final String? typeMult = user['type_multiplicator'];
+
+    String roleDisplay =
+        types == 'cultivateurs' ? 'Cultivateur' : 'Multiplicateur';
+    if (typeMult != null) {
+      roleDisplay += ' ($typeMult)';
+    }
 
     return GlassCard(
       child: Column(
@@ -121,11 +129,12 @@ class _HomePageState extends State<HomePage>
                       style: TextStyle(color: Colors.grey[600], fontSize: 16),
                     ),
                     Text(
-                      '${user['first_name'] ?? 'Utilisateur'} ${user['last_name'] ?? ''}',
+                      '${user['fullname'] ?? user['first_name'] ?? 'Utilisateur'}',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -136,7 +145,11 @@ class _HomePageState extends State<HomePage>
           const SizedBox(height: 20),
           const Divider(),
           const SizedBox(height: 10),
-          _buildInfoRow(Icons.work_rounded, user['role'] ?? 'Multiplicateur'),
+          _buildInfoRow(
+              types == 'cultivateurs'
+                  ? Icons.agriculture_rounded
+                  : Icons.work_rounded,
+              roleDisplay),
           if (user['province'] != null)
             _buildInfoRow(Icons.location_on_rounded,
                 '${user['province']}, ${user['commune']}'),
@@ -197,6 +210,9 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _buildQuickActions(BuildContext context, Map<String, dynamic> user) {
+    final String types = user['types'] ?? 'multiplicateurs';
+    final bool isCultivateur = types == 'cultivateurs';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -233,20 +249,22 @@ class _HomePageState extends State<HomePage>
                   [Colors.blue, Colors.indigo],
                   () => context.go('/orders'),
                 ),
-                _buildModernActionCard(
-                  context,
-                  'PLANTES',
-                  Icons.eco_rounded,
-                  [Colors.teal, Colors.tealAccent.shade700],
-                  () => context.go('/plants'),
-                ),
-                _buildModernActionCard(
-                  context,
-                  'PERTES',
-                  Icons.report_problem_rounded,
-                  [Colors.orange, Colors.red],
-                  () => context.go('/losses'),
-                ),
+                if (!isCultivateur) ...[
+                  _buildModernActionCard(
+                    context,
+                    'PLANTES',
+                    Icons.eco_rounded,
+                    [Colors.teal, Colors.tealAccent.shade700],
+                    () => context.go('/plants'),
+                  ),
+                  _buildModernActionCard(
+                    context,
+                    'PERTES',
+                    Icons.report_problem_rounded,
+                    [Colors.orange, Colors.red],
+                    () => context.go('/losses'),
+                  ),
+                ],
                 if (user['role'] == 'superuser' || user['role'] == 'admin')
                   _buildModernActionCard(
                     context,

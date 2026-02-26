@@ -4,6 +4,8 @@ import 'package:imbuto/features/stocks/data/datasources/stock_api_service.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../bloc/stock_bloc.dart';
 import '../../domain/entities/stock.dart';
+import 'package:imbuto/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:imbuto/features/auth/presentation/bloc/auth_state.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class StocksListPage extends StatelessWidget {
@@ -17,61 +19,74 @@ class StocksListPage extends StatelessWidget {
       child: Builder(
         // Builder gives us a context that is BELOW the BlocProvider,
         // allowing _showAddStockDialog to correctly call context.read<StockBloc>()
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: const Text('Mes Stocks'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: () => _showAddStockDialog(context),
-              ),
-            ],
-          ),
-          body: BlocConsumer<StockBloc, StockState>(
-            listener: (context, state) {
-              if (state is StockError) {
-                Fluttertoast.showToast(
-                  msg: state.message,
-                  backgroundColor: Colors.red,
-                  textColor: Colors.white,
-                );
-              } else if (state is StockOperationSuccess) {
-                Fluttertoast.showToast(
-                  msg: state.message,
-                  backgroundColor: Colors.green,
-                  textColor: Colors.white,
-                );
-              }
-            },
-            builder: (context, state) {
-              if (state is StockLoading) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (state is StockLoaded) {
-                if (state.stocks.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.inventory_2_outlined,
-                            size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text('Aucun stock disponible',
-                            style: TextStyle(fontSize: 18)),
-                        Text('Appuyez sur + pour ajouter un stock'),
-                      ],
+        builder: (context) => BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, authState) {
+            final bool isCultivateur = authState is AuthAuthenticated &&
+                authState.user['types'] == 'cultivateurs';
+
+            return Scaffold(
+              appBar: AppBar(
+                title:
+                    Text(isCultivateur ? 'Catalogue Semences' : 'Mes Stocks'),
+                actions: [
+                  if (!isCultivateur)
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: () => _showAddStockDialog(context),
                     ),
-                  );
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.stocks.length,
-                  itemBuilder: (context, index) =>
-                      _buildStockCard(context, state.stocks[index]),
-                );
-              }
-              return const SizedBox();
-            },
-          ),
+                ],
+              ),
+              body: BlocConsumer<StockBloc, StockState>(
+                listener: (context, state) {
+                  if (state is StockError) {
+                    Fluttertoast.showToast(
+                      msg: state.message,
+                      backgroundColor: Colors.red,
+                      textColor: Colors.white,
+                    );
+                  } else if (state is StockOperationSuccess) {
+                    Fluttertoast.showToast(
+                      msg: state.message,
+                      backgroundColor: Colors.green,
+                      textColor: Colors.white,
+                    );
+                  }
+                },
+                builder: (context, state) {
+                  if (state is StockLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is StockLoaded) {
+                    if (state.stocks.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.inventory_2_outlined,
+                                size: 64, color: Colors.grey),
+                            const SizedBox(height: 16),
+                            Text(
+                                isCultivateur
+                                    ? 'Aucune semence disponible'
+                                    : 'Aucun stock disponible',
+                                style: const TextStyle(fontSize: 18)),
+                            if (!isCultivateur)
+                              const Text('Appuyez sur + pour ajouter un stock'),
+                          ],
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: state.stocks.length,
+                      itemBuilder: (context, index) =>
+                          _buildStockCard(context, state.stocks[index]),
+                    );
+                  }
+                  return const SizedBox();
+                },
+              ),
+            );
+          },
         ),
       ),
     );
