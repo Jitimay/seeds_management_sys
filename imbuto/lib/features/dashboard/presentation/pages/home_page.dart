@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:imbuto/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:imbuto/features/auth/presentation/bloc/auth_event.dart';
 import 'package:imbuto/features/auth/presentation/bloc/auth_state.dart';
+import 'package:imbuto/features/ratings/presentation/bloc/rating_bloc.dart';
+import 'package:imbuto/features/ratings/presentation/widgets/rating_widgets.dart';
+import 'package:imbuto/shared/services/service_locator.dart';
+import 'package:imbuto/features/ratings/domain/entities/rating.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -59,21 +63,28 @@ class _HomePageState extends State<HomePage>
         child: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             if (state is AuthAuthenticated) {
-              return FadeTransition(
-                opacity: _fadeAnimation,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildWelcomeSection(state.user),
-                      const SizedBox(height: 30),
-                      _buildQuickActions(context, state.user),
-                      const SizedBox(height: 30),
-                      _buildRecentActivity(context),
-                      const SizedBox(height: 100), // Space for floating nav bar
-                    ],
+              return BlocProvider(
+                create: (context) =>
+                    ServiceLocator.get<RatingBloc>()..add(LoadRatings()),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildWelcomeSection(state.user),
+                        const SizedBox(height: 30),
+                        _buildQuickActions(context, state.user),
+                        const SizedBox(height: 30),
+                        _buildRecentActivity(context),
+                        const SizedBox(height: 30),
+                        _buildRatingsSection(context),
+                        const SizedBox(
+                            height: 100), // Space for floating nav bar
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -317,6 +328,7 @@ class _HomePageState extends State<HomePage>
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 15),
@@ -340,6 +352,181 @@ class _HomePageState extends State<HomePage>
         ),
       ],
     );
+  }
+
+  Widget _buildRatingsSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Avis et évaluations',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                // TODO: Navigate to all reviews
+              },
+              child: const Text('Tout voir'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        BlocBuilder<RatingBloc, RatingState>(
+          builder: (context, state) {
+            if (state is RatingLoading) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            } else if (state is RatingLoaded) {
+              if (state.ratings.isEmpty) {
+                return GlassCard(
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.star_outline_rounded,
+                            size: 40, color: Colors.grey[400]),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Aucun avis pour le moment',
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: state.ratings.length > 3 ? 3 : state.ratings.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final rating = state.ratings[index];
+                  return _buildRatingItem(rating);
+                },
+              );
+            } else if (state is RatingError) {
+              return Center(
+                child: Text(
+                  'Erreur: ${state.message}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            }
+            return const SizedBox();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRatingItem(Rating rating) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 12,
+                    backgroundColor: Colors.green.withOpacity(0.1),
+                    child:
+                        const Icon(Icons.person, size: 14, color: Colors.green),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    rating.createdBy ?? 'Utilisateur',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+              RatingStars(
+                rating: rating.etoiles.toDouble(),
+                size: 14,
+                allowHalfRating: false,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (rating.stockVariety != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                rating.stockVariety!,
+                style: TextStyle(
+                  color: Colors.green[700],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          if (rating.commentaire != null && rating.commentaire!.isNotEmpty)
+            Text(
+              rating.commentaire!,
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+          const SizedBox(height: 8),
+          Text(
+            _formatDate(rating.createdAt),
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays < 1) {
+      if (diff.inHours < 1) {
+        return 'Il y a ${diff.inMinutes} min';
+      }
+      return 'Il y a ${diff.inHours} h';
+    }
+    if (diff.inDays < 7) {
+      return 'Il y a ${diff.inDays} j';
+    }
+    return '${date.day}/${date.month}/${date.year}';
   }
 }
 
