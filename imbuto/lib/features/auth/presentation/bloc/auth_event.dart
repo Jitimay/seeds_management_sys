@@ -27,3 +27,7 @@ class RegisterRequested extends AuthEvent {
   @override
   List<Object?> get props => [userData];
 }
+
+class TokenRefreshRequested extends AuthEvent {}
+
+class TokenValidationRequested extends AuthEvent {}

@@ -1,5 +1,14 @@
 import 'package:equatable/equatable.dart';
 
+enum AuthErrorType {
+  network,
+  invalidCredentials,
+  tokenExpired,
+  tokenRefreshFailed,
+  storageError,
+  unknown,
+}
+
 abstract class AuthState extends Equatable {
   @override
   List<Object?> get props => [];
@@ -21,13 +30,30 @@ class AuthAuthenticated extends AuthState {
 
 class AuthUnauthenticated extends AuthState {}
 
-class AuthError extends AuthState {
+class AuthTokenRefreshing extends AuthState {}
+
+class AuthTokenExpired extends AuthState {
   final String message;
   
-  AuthError({required this.message});
+  AuthTokenExpired({required this.message});
   
   @override
   List<Object?> get props => [message];
+}
+
+class AuthError extends AuthState {
+  final String message;
+  final AuthErrorType type;
+  final bool canRetry;
+  
+  AuthError({
+    required this.message,
+    this.type = AuthErrorType.unknown,
+    this.canRetry = false,
+  });
+  
+  @override
+  List<Object?> get props => [message, type, canRetry];
 }
 
 class AuthRegistrationSuccess extends AuthState {

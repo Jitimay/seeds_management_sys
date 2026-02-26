@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:imbuto/core/services/api_service.dart';
+import 'package:imbuto/core/services/token_manager.dart';
 import 'package:imbuto/features/orders/data/datasources/order_api_service.dart';
 import 'package:imbuto/features/orders/data/repositories/order_repository_impl.dart';
 import 'package:imbuto/features/orders/domain/repositories/order_repository.dart';
@@ -29,8 +30,15 @@ final GetIt sl = GetIt.instance;
 
 class ServiceLocator {
   static Future<void> init() async {
-    // Core
-    sl.registerLazySingleton(() => ApiClient(baseUrl: AppConstants.baseUrl));
+    // Core - Token Manager first
+    sl.registerLazySingleton(() => TokenManager());
+    
+    // Core - API Client with Token Manager
+    sl.registerLazySingleton(() => ApiClient(
+      baseUrl: AppConstants.baseUrl,
+      tokenManager: sl(),
+    ));
+    
     sl.registerLazySingleton(() => ApiService(sl()));
 
     // API Services
@@ -80,10 +88,11 @@ class ServiceLocator {
     );
     sl.registerLazySingleton(() => AdminRemoteDataSource(apiClient: sl()));
 
-    // BLoCs
+    // BLoCs - Auth Bloc with Token Manager
     sl.registerLazySingleton(() => AuthBloc(
           loginUseCase: sl(),
           registerUseCase: sl(),
+          tokenManager: sl(),
         ));
     sl.registerFactory(() => StockBloc(
           getStocksUseCase: sl(),

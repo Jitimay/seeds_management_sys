@@ -28,6 +28,33 @@ class _SplashScreenState extends State<SplashScreen> {
           context.go('/home');
         } else if (state is AuthUnauthenticated) {
           context.go('/login');
+        } else if (state is AuthTokenExpired) {
+          // Show message before redirecting
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+              context.go('/login');
+            }
+          });
+        } else if (state is AuthError) {
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // Redirect to login after error
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+              context.go('/login');
+            }
+          });
         }
       },
       child: Scaffold(
@@ -59,8 +86,26 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: 48),
-              const CircularProgressIndicator(
-                color: Colors.white,
+              BlocBuilder<AuthBloc, AuthState>(
+                builder: (context, state) {
+                  if (state is AuthTokenRefreshing) {
+                    return const Column(
+                      children: [
+                        CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Refreshing session...',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    );
+                  }
+                  return const CircularProgressIndicator(
+                    color: Colors.white,
+                  );
+                },
               ),
             ],
           ),
