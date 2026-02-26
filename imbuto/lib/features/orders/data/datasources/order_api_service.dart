@@ -1,7 +1,5 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
-import '../../../../core/storage/storage_service.dart';
-import '../../../../core/constants/app_constants.dart';
 
 class OrderApiService {
   final ApiClient _apiClient;
@@ -9,23 +7,14 @@ class OrderApiService {
   OrderApiService(this._apiClient);
 
   Future<List<Map<String, dynamic>>> getOrders() async {
-    print('=== ORDERS API CALL ===');
     try {
       final response = await _apiClient.dio.get('commande/');
       return _parseResults(response.data);
     } catch (e) {
-      print('Orders API error: $e');
       if (e is DioException) {
         final statusCode = e.response?.statusCode;
         final errorData = e.response?.data;
-        if (statusCode == 401) {
-          final newToken = await _refreshToken();
-          if (newToken != null) {
-            _apiClient.setAuthToken(newToken);
-            final response = await _apiClient.dio.get('commande/');
-            return _parseResults(response.data);
-          }
-        } else if (statusCode == 403) {
+        if (statusCode == 403) {
           final message = errorData is Map && errorData.containsKey('status')
               ? errorData['status']
               : 'Accès refusé : votre compte multiplicateur n\'est pas encore validé.';
@@ -82,33 +71,5 @@ class OrderApiService {
 
   Future<void> deleteOrder(int id) async {
     await _apiClient.dio.delete('commande/$id/');
-  }
-
-  Future<String?> _refreshToken() async {
-    try {
-      final refreshToken =
-          await StorageService.getSecureString(AppConstants.refreshTokenKey);
-      if (refreshToken == null) {
-        print('No refresh token found');
-        return null;
-      }
-
-      print('Using refresh token: ${refreshToken.substring(0, 10)}...');
-      final dio = Dio(BaseOptions(baseUrl: AppConstants.baseUrl));
-      final response =
-          await dio.post('refresh/', data: {'refresh': refreshToken});
-
-      final newToken = response.data['access'];
-      await StorageService.setSecureString(AppConstants.tokenKey, newToken);
-
-      print('Token refreshed successfully: ${newToken.substring(0, 10)}...');
-      return newToken;
-    } catch (e) {
-      print('Token refresh failed: $e');
-      // Clear expired tokens
-      await StorageService.removeSecure(AppConstants.tokenKey);
-      await StorageService.removeSecure(AppConstants.refreshTokenKey);
-      return null;
-    }
   }
 }

@@ -205,7 +205,7 @@ class OrdersListPage extends StatelessWidget {
     // We hide actions for Cultivateurs for now as they are buyers
     if (isCultivateur) return const SizedBox.shrink();
 
-    return PopupMenuButton<String>(
+    /* return PopupMenuButton<String>(
       itemBuilder: (context) => [
         if (!order.isDelivered)
           const PopupMenuItem(value: 'deliver', child: Text('Marquer livré')),
@@ -219,7 +219,8 @@ class OrdersListPage extends StatelessWidget {
           _showPaymentDialog(context, order);
         }
       },
-    );
+    ); */
+    return const SizedBox.shrink();
   }
 
   void _showCreateOrderDialog(BuildContext context) {
@@ -229,49 +230,6 @@ class OrdersListPage extends StatelessWidget {
       builder: (context) => BlocProvider.value(
         value: orderBloc,
         child: const OrderFormDialog(),
-      ),
-    );
-  }
-
-  void _showPaymentDialog(BuildContext context, Order order) {
-    final orderBloc = context.read<OrderBloc>();
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => BlocProvider.value(
-        value: orderBloc,
-        child: AlertDialog(
-          title: const Text('Mettre à jour le paiement'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Total: ${order.montantTotal} BIF'),
-              Text('Déjà payé: ${order.montantPaye} BIF'),
-              Text('Restant: ${order.montantTotal - order.montantPaye} BIF'),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: controller,
-                decoration: const InputDecoration(labelText: 'Montant payé'),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Annuler')),
-            TextButton(
-              onPressed: () {
-                final amount = int.tryParse(controller.text) ?? 0;
-                if (amount > 0) {
-                  orderBloc.add(UpdatePayment(order.id, amount));
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Confirmer'),
-            ),
-          ],
-        ),
       ),
     );
   }

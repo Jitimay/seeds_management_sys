@@ -216,6 +216,7 @@ class _LossFormDialogState extends State<LossFormDialog> {
                         value: _selectedStockId,
                         isExpanded: true,
                         items: _stocks
+                            .where((s) => s['validated_at'] != null)
                             .map((s) => DropdownMenuItem<int>(
                                   value: s['id'] as int,
                                   child: Text(
