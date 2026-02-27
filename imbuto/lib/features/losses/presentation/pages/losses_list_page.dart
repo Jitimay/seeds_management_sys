@@ -110,19 +110,23 @@ class LossesListPage extends StatelessWidget {
                                     final loss = state.losses[index];
                                     return Card(
                                       margin: const EdgeInsets.only(bottom: 12),
-                                      child: ListTile(
-                                        title: Text(loss.stockVariety ??
-                                            'Stock inconnu'),
-                                        subtitle: Text(
-                                            'Quantité: ${loss.quantite} kg\nDate: ${loss.createdAt.day}/${loss.createdAt.month}/${loss.createdAt.year}'),
-                                        trailing: Text(
-                                          '${loss.montantPerdu.toStringAsFixed(0)} BIF',
-                                          style: const TextStyle(
-                                            color: Colors.red,
-                                            fontWeight: FontWeight.bold,
+                                      child: InkWell(
+                                        onTap: () => _showLossDetails(context, loss),
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: ListTile(
+                                          title: Text(loss.stockVariety ??
+                                              'Stock inconnu'),
+                                          subtitle: Text(
+                                              'Quantité: ${loss.quantite} kg\nDate: ${loss.createdAt.day}/${loss.createdAt.month}/${loss.createdAt.year}'),
+                                          trailing: Text(
+                                            '${loss.montantPerdu.toStringAsFixed(0)} BIF',
+                                            style: const TextStyle(
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
+                                          isThreeLine: true,
                                         ),
-                                        isThreeLine: true,
                                       ),
                                     );
                                   },
@@ -148,6 +152,66 @@ class LossesListPage extends StatelessWidget {
       builder: (context) => BlocProvider.value(
         value: lossBloc,
         child: const LossFormDialog(),
+      ),
+    );
+  }
+
+  void _showLossDetails(BuildContext context, dynamic loss) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Détails de la perte'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailRow('Semence', loss.stockVariety ?? 'Stock inconnu'),
+              _buildDetailRow('Quantité perdue', '${loss.quantite} kg'),
+              _buildDetailRow('Montant perdu', '${loss.montantPerdu.toStringAsFixed(0)} BIF'),
+              _buildDetailRow(
+                'Date',
+                '${loss.createdAt.day}/${loss.createdAt.month}/${loss.createdAt.year}',
+              ),
+              if (loss.details != null && loss.details.isNotEmpty) ...[
+                const Divider(),
+                const Text(
+                  'Raison:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(loss.details),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: Text(value),
+          ),
+        ],
       ),
     );
   }
@@ -177,8 +241,10 @@ class _LossFormDialogState extends State<LossFormDialog> {
 
   Future<void> _loadStocks() async {
     try {
+      print('📱 Loading stocks for loss dialog...');
       final stockApiService = ServiceLocator.get<StockApiService>();
       final stocks = await stockApiService.getStocks();
+      print('📱 Loaded ${stocks.length} stocks for loss dialog');
       if (mounted) {
         setState(() {
           _stocks = stocks;
@@ -186,7 +252,16 @@ class _LossFormDialogState extends State<LossFormDialog> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loadingStocks = false);
+      print('📱 Error loading stocks for loss dialog: $e');
+      if (mounted) {
+        setState(() => _loadingStocks = false);
+        Fluttertoast.showToast(
+          msg: 'Erreur lors du chargement des stocks: ${e.toString()}',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          toastLength: Toast.LENGTH_LONG,
+        );
+      }
     }
   }
 
@@ -206,14 +281,36 @@ class _LossFormDialogState extends State<LossFormDialog> {
         child: _loadingStocks
             ? const SizedBox(
                 height: 100, child: Center(child: CircularProgressIndicator()))
-            : SingleChildScrollView(
+            : _stocks.isEmpty
+                ? SizedBox(
+                    height: 150,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.warning, size: 48, color: Colors.orange),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Aucun stock disponible',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Veuillez créer et valider des stocks d\'abord',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : SingleChildScrollView(
                 child: Form(
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       DropdownButtonFormField<int>(
-                        value: _selectedStockId,
                         isExpanded: true,
                         items: _stocks
                             .where((s) => s['validated_at'] != null)
@@ -259,10 +356,11 @@ class _LossFormDialogState extends State<LossFormDialog> {
         TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Annuler')),
-        TextButton(
-          onPressed: _loadingStocks ? null : _submitForm,
-          child: const Text('Enregistrer'),
-        ),
+        if (!_loadingStocks && _stocks.isNotEmpty)
+          TextButton(
+            onPressed: _submitForm,
+            child: const Text('Enregistrer'),
+          ),
       ],
     );
   }

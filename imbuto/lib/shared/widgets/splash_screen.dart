@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:imbuto/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:imbuto/features/auth/presentation/bloc/auth_event.dart';
 import 'package:imbuto/features/auth/presentation/bloc/auth_state.dart';
@@ -30,11 +31,11 @@ class _SplashScreenState extends State<SplashScreen> {
           context.go('/login');
         } else if (state is AuthTokenExpired) {
           // Show message before redirecting
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.orange,
-            ),
+          Fluttertoast.showToast(
+            msg: state.message,
+            backgroundColor: Colors.orange,
+            textColor: Colors.white,
+            toastLength: Toast.LENGTH_SHORT,
           );
           Future.delayed(const Duration(seconds: 2), () {
             if (mounted) {
@@ -43,11 +44,11 @@ class _SplashScreenState extends State<SplashScreen> {
           });
         } else if (state is AuthError) {
           // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-            ),
+          Fluttertoast.showToast(
+            msg: state.message,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            toastLength: Toast.LENGTH_SHORT,
           );
           // Redirect to login after error
           Future.delayed(const Duration(seconds: 2), () {

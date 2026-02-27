@@ -82,7 +82,9 @@ class _RegisterPageState extends State<RegisterPage> {
             );
             // Add a small delay to allow the toast to be seen before navigating
             Future.delayed(const Duration(seconds: 2), () {
-              context.go('/login');
+              if (context.mounted) {
+                context.go('/login');
+              }
             });
           } else if (state is AuthError) {
             Fluttertoast.showToast(

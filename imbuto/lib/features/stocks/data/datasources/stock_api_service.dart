@@ -8,12 +8,23 @@ class StockApiService {
 
   Future<List<Map<String, dynamic>>> getStocks() async {
     try {
+      print('🔍 Fetching stocks from API...');
       final response = await _apiClient.dio.get('stock/');
-      return _parseResults(response.data);
+      print('✅ Stocks response received: ${response.statusCode}');
+      print('📦 Stocks data type: ${response.data.runtimeType}');
+      final results = _parseResults(response.data);
+      print('✅ Parsed ${results.length} stocks');
+      if (results.isEmpty) {
+        print('⚠️ No stocks available. Make sure you have created and validated stocks.');
+      }
+      return results;
     } catch (e) {
+      print('❌ Stocks API error: $e');
       if (e is DioException) {
         final statusCode = e.response?.statusCode;
         final errorData = e.response?.data;
+        print('❌ Status code: $statusCode');
+        print('❌ Response data: $errorData');
 
         if (statusCode == 403) {
           final message = errorData is Map && errorData.containsKey('status')
@@ -41,11 +52,20 @@ class StockApiService {
 
   Future<List<Map<String, dynamic>>> getVarieties() async {
     try {
+      print('🔍 Fetching varieties from API...');
       final response = await _apiClient.dio.get('variete/');
-      return _parseResults(response.data);
+      print('✅ Varieties response received: ${response.statusCode}');
+      print('📦 Varieties data type: ${response.data.runtimeType}');
+      final results = _parseResults(response.data);
+      print('✅ Parsed ${results.length} varieties');
+      return results;
     } catch (e) {
-      print('Varieties API error: $e');
-      return [];
+      print('❌ Varieties API error: $e');
+      if (e is DioException) {
+        print('❌ Status code: ${e.response?.statusCode}');
+        print('❌ Response data: ${e.response?.data}');
+      }
+      rethrow; // Propagate error instead of returning empty list
     }
   }
 
@@ -70,13 +90,23 @@ class StockApiService {
 
   Future<List<Map<String, dynamic>>> getStocksPublic() async {
     try {
+      print('🔍 Fetching public stocks from API...');
       final response = await _apiClient.dio.get('stock/');
-      // On the backend, maybe there is a 'public' or similar endpoint,
-      // but for now we list all stocks and the user can pick from them.
-      return _parseResults(response.data);
+      print('✅ Public stocks response received: ${response.statusCode}');
+      print('📦 Public stocks data type: ${response.data.runtimeType}');
+      final results = _parseResults(response.data);
+      print('✅ Parsed ${results.length} public stocks');
+      if (results.isEmpty) {
+        print('⚠️ No stocks available. Make sure you have validated stocks in the database.');
+      }
+      return results;
     } catch (e) {
-      print('Public Stocks API error: $e');
-      return [];
+      print('❌ Public Stocks API error: $e');
+      if (e is DioException) {
+        print('❌ Status code: ${e.response?.statusCode}');
+        print('❌ Response data: ${e.response?.data}');
+      }
+      rethrow; // Propagate error instead of returning empty list
     }
   }
 

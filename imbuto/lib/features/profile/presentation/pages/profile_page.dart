@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../features/auth/presentation/bloc/auth_state.dart';
 import '../../../../features/auth/presentation/bloc/auth_event.dart';
@@ -152,22 +154,21 @@ class ProfilePage extends StatelessWidget {
                   Card(
                     child: Column(
                       children: [
-                        ListTile(
-                          leading: const Icon(Icons.lock),
-                          title: const Text('Changer le mot de passe'),
-                          trailing: const Icon(Icons.arrow_forward_ios),
-                          onTap: () {
-                            // TODO: Navigate to change password page
-                          },
-                        ),
-                        const Divider(),
+                        // Commented out - Password change feature not yet implemented
+                        // ListTile(
+                        //   leading: const Icon(Icons.lock),
+                        //   title: const Text('Changer le mot de passe'),
+                        //   trailing: const Icon(Icons.arrow_forward_ios),
+                        //   onTap: () {
+                        //     // TODO: Navigate to change password page
+                        //   },
+                        // ),
+                        // const Divider(),
                         ListTile(
                           leading: const Icon(Icons.help),
                           title: const Text('Aide et support'),
                           trailing: const Icon(Icons.arrow_forward_ios),
-                          onTap: () {
-                            // TODO: Navigate to help page
-                          },
+                          onTap: () => _openWhatsAppSupport(context),
                         ),
                         const Divider(),
                         ListTile(
@@ -243,5 +244,33 @@ class ProfilePage extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _openWhatsAppSupport(BuildContext context) async {
+    const phoneNumber = '+257 62 44 93 72';
+    const message = 'Bonjour, j\'ai besoin d\'aide avec l\'application Imbuto.';
+    
+    // Remove spaces and special characters from phone number
+    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final whatsappUrl = Uri.parse('https://wa.me/$cleanNumber?text=${Uri.encodeComponent(message)}');
+    
+    try {
+      if (await canLaunchUrl(whatsappUrl)) {
+        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+      } else {
+        Fluttertoast.showToast(
+          msg: 'Impossible d\'ouvrir WhatsApp. Contactez-nous au $phoneNumber',
+          toastLength: Toast.LENGTH_LONG,
+          backgroundColor: Colors.orange,
+          textColor: Colors.white,
+        );
+      }
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Erreur lors de l\'ouverture de WhatsApp. Contactez-nous au $phoneNumber',
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
   }
 }

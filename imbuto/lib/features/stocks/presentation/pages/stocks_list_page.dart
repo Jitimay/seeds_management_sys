@@ -244,8 +244,10 @@ class _StockFormDialogState extends State<StockFormDialog> {
 
   Future<void> _loadVarieties() async {
     try {
+      print('📱 Loading varieties for stock dialog...');
       final apiService = ServiceLocator.get<StockApiService>();
       final varieties = await apiService.getVarieties();
+      print('📱 Loaded ${varieties.length} varieties for stock dialog');
       if (mounted) {
         setState(() {
           _varieties = varieties;
@@ -259,7 +261,16 @@ class _StockFormDialogState extends State<StockFormDialog> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loadingVarieties = false);
+      print('📱 Error loading varieties for stock dialog: $e');
+      if (mounted) {
+        setState(() => _loadingVarieties = false);
+        Fluttertoast.showToast(
+          msg: 'Erreur lors du chargement des variétés: ${e.toString()}',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          toastLength: Toast.LENGTH_LONG,
+        );
+      }
     }
   }
 
@@ -280,14 +291,37 @@ class _StockFormDialogState extends State<StockFormDialog> {
         child: _loadingVarieties
             ? const SizedBox(
                 height: 100, child: Center(child: CircularProgressIndicator()))
-            : SingleChildScrollView(
+            : _varieties.isEmpty
+                ? SizedBox(
+                    height: 150,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.warning, size: 48, color: Colors.orange),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Aucune variété disponible',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Veuillez créer des variétés d\'abord',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : SingleChildScrollView(
                 child: Form(
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       DropdownButtonFormField<String>(
-                        value: _selectedCategory,
+                        initialValue: _selectedCategory,
                         items: ['Pré_Bases', 'Base', 'Certifiés']
                             .map((cat) =>
                                 DropdownMenuItem(value: cat, child: Text(cat)))
@@ -299,7 +333,6 @@ class _StockFormDialogState extends State<StockFormDialog> {
                       ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<int>(
-                        value: _selectedVarietyId,
                         isExpanded: true,
                         items: _varieties
                             .map((v) => DropdownMenuItem<int>(
@@ -341,10 +374,11 @@ class _StockFormDialogState extends State<StockFormDialog> {
         TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Annuler')),
-        TextButton(
-          onPressed: _loadingVarieties ? null : _submitForm,
-          child: Text(widget.stock == null ? 'Ajouter' : 'Modifier'),
-        ),
+        if (!_loadingVarieties && _varieties.isNotEmpty)
+          TextButton(
+            onPressed: _submitForm,
+            child: Text(widget.stock == null ? 'Ajouter' : 'Modifier'),
+          ),
       ],
     );
   }

@@ -104,11 +104,14 @@ class OrdersListPage extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: InkWell(
+        onTap: () => _showOrderDetails(context, order, authState),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -187,8 +190,83 @@ class OrdersListPage extends StatelessWidget {
                 'Livré le ${order.deliveredDate!.day}/${order.deliveredDate!.month}/${order.deliveredDate!.year}',
                 style: TextStyle(color: Colors.grey[500], fontSize: 12),
               ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _showOrderDetails(BuildContext context, Order order, AuthState authState) {
+    String otherPartyLabel = 'Acheteur';
+    String otherPartyName = order.buyerName;
+
+    if (authState is AuthAuthenticated) {
+      final currentUsername = authState.user['username'];
+      if (order.buyerName == currentUsername) {
+        otherPartyLabel = 'Vendeur';
+        otherPartyName = order.sellerName;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Commande #${order.id}'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailRow('Semence', order.stockVariety),
+              _buildDetailRow('Catégorie', order.stockCategory),
+              _buildDetailRow(otherPartyLabel, otherPartyName),
+              const Divider(),
+              _buildDetailRow('Quantité', '${order.quantity} kg'),
+              _buildDetailRow('Prix unitaire', '${order.prixUnitaire} BIF'),
+              _buildDetailRow('Montant total', '${order.montantTotal} BIF'),
+              _buildDetailRow('Montant payé', '${order.montantPaye} BIF'),
+              const Divider(),
+              _buildDetailRow('Statut', order.isDelivered ? 'Livré' : 'En cours'),
+              _buildDetailRow(
+                'Date de création',
+                '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+              ),
+              if (order.deliveredDate != null)
+                _buildDetailRow(
+                  'Date de livraison',
+                  '${order.deliveredDate!.day}/${order.deliveredDate!.month}/${order.deliveredDate!.year}',
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: Text(value),
+          ),
+        ],
       ),
     );
   }
@@ -260,8 +338,10 @@ class _OrderFormDialogState extends State<OrderFormDialog> {
 
   Future<void> _loadStocks() async {
     try {
+      print('📱 Loading stocks for order dialog...');
       final stockApiService = ServiceLocator.get<StockApiService>();
       final stocks = await stockApiService.getStocksPublic();
+      print('📱 Loaded ${stocks.length} stocks for order dialog');
       if (mounted) {
         setState(() {
           _stocks = stocks;
@@ -269,7 +349,16 @@ class _OrderFormDialogState extends State<OrderFormDialog> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loadingStocks = false);
+      print('📱 Error loading stocks for order dialog: $e');
+      if (mounted) {
+        setState(() => _loadingStocks = false);
+        Fluttertoast.showToast(
+          msg: 'Erreur lors du chargement des stocks: ${e.toString()}',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          toastLength: Toast.LENGTH_LONG,
+        );
+      }
     }
   }
 
@@ -288,14 +377,36 @@ class _OrderFormDialogState extends State<OrderFormDialog> {
         child: _loadingStocks
             ? const SizedBox(
                 height: 100, child: Center(child: CircularProgressIndicator()))
-            : SingleChildScrollView(
+            : _stocks.isEmpty
+                ? SizedBox(
+                    height: 150,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.warning, size: 48, color: Colors.orange),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Aucun stock disponible',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Veuillez créer et valider des stocks d\'abord',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : SingleChildScrollView(
                 child: Form(
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       DropdownButtonFormField<int>(
-                        value: _selectedStockId,
                         isExpanded: true,
                         items: _stocks
                             .where((s) => s['validated_at'] != null)
@@ -362,10 +473,11 @@ class _OrderFormDialogState extends State<OrderFormDialog> {
         TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Annuler')),
-        TextButton(
-          onPressed: _loadingStocks ? null : _submitForm,
-          child: const Text('Créer'),
-        ),
+        if (!_loadingStocks && _stocks.isNotEmpty)
+          TextButton(
+            onPressed: _submitForm,
+            child: const Text('Créer'),
+          ),
       ],
     );
   }
